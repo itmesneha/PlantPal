@@ -107,73 +107,79 @@ export function Dashboard({ user, onScanPlant }: DashboardProps) {
   const earnedAchievements = achievements.filter(a => a.earned).length;
 
   return (
-    <div className="space-y-6 p-4 max-w-6xl mx-auto">
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1>Welcome back, {user.name}!</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            Welcome back, {user.name}! 🌱
+          </h1>
+          <p className="text-lg text-gray-600">
             Track your plants, earn achievements, and grow your garden
           </p>
         </div>
-        <Button onClick={onScanPlant} className="w-full sm:w-auto">
-          Scan New Plant
+        <Button 
+          onClick={onScanPlant} 
+          className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          size="lg"
+        >
+          📸 Scan New Plant
         </Button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="card-hover plant-card border-green-200">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Plants</p>
-                <p className="text-2xl">{plants.length}</p>
+                <p className="text-sm font-medium text-gray-600">Total Plants</p>
+                <p className="text-3xl font-bold text-green-600">{plants.length}</p>
               </div>
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span>🌱</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-2xl">🌱</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="card-hover plant-card border-blue-200">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg Health</p>
-                <p className="text-2xl">{Math.round(totalHealthScore)}</p>
+                <p className="text-sm font-medium text-gray-600">Avg Health</p>
+                <p className="text-3xl font-bold text-blue-600">{Math.round(totalHealthScore)}%</p>
               </div>
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-blue-600" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="card-hover plant-card border-yellow-200">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Achievements</p>
-                <p className="text-2xl">{earnedAchievements}</p>
+                <p className="text-sm font-medium text-gray-600">Achievements</p>
+                <p className="text-3xl font-bold text-yellow-600">{earnedAchievements}</p>
               </div>
-              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-yellow-600" />
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
+                <Trophy className="w-6 h-6 text-yellow-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="card-hover plant-card border-orange-200">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Best Streak</p>
-                <p className="text-2xl">{Math.max(...plants.map(p => p.streak))}</p>
+                <p className="text-sm font-medium text-gray-600">Best Streak</p>
+                <p className="text-3xl font-bold text-orange-600">{Math.max(...plants.map(p => p.streak))}</p>
               </div>
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <Flame className="w-4 h-4 text-orange-600" />
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center shadow-lg">
+                <Flame className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -181,30 +187,36 @@ export function Dashboard({ user, onScanPlant }: DashboardProps) {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-muted p-1 rounded-lg w-fit">
+      <div className="flex space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100 w-fit">
         <button
           onClick={() => setActiveTab('plants')}
-          className={`px-4 py-2 rounded-md transition-colors ${
-            activeTab === 'plants' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${
+            activeTab === 'plants' 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
           }`}
         >
-          My Plants
+          🌱 My Plants
         </button>
         <button
           onClick={() => setActiveTab('achievements')}
-          className={`px-4 py-2 rounded-md transition-colors ${
-            activeTab === 'achievements' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${
+            activeTab === 'achievements' 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
           }`}
         >
-          Achievements
+          🏆 Achievements
         </button>
         <button
           onClick={() => setActiveTab('leaderboard')}
-          className={`px-4 py-2 rounded-md transition-colors ${
-            activeTab === 'leaderboard' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${
+            activeTab === 'leaderboard' 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
           }`}
         >
-          Leaderboard
+          📊 Leaderboard
         </button>
       </div>
 
@@ -216,28 +228,47 @@ export function Dashboard({ user, onScanPlant }: DashboardProps) {
           
           {/* Plant Cards Grid */}
           <div>
-            <h3 className="mb-4">Plant Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">🌿 Your Plant Collection</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {plants.map((plant) => (
-                <Card key={plant.id}>
-                  <CardHeader className="pb-3">
+                <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg">
+                  <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{plant.name}</CardTitle>
-                      <Badge variant={plant.healthScore >= 80 ? 'default' : 'secondary'}>
+                      <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
+                      <Badge 
+                        className={`px-3 py-1 text-sm font-medium ${
+                          plant.healthScore >= 80 
+                            ? 'bg-green-100 text-green-800 border-green-200' 
+                            : plant.healthScore >= 60
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                            : 'bg-red-100 text-red-800 border-red-200'
+                        }`}
+                      >
                         {plant.healthScore}/100
                       </Badge>
                     </div>
-                    <CardDescription>{plant.species}</CardDescription>
+                    <CardDescription className="text-gray-600 font-medium">{plant.species}</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Progress value={plant.healthScore} />
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm font-medium">
+                        <span>Health Score</span>
+                        <span className={plant.healthScore >= 80 ? 'text-green-600' : plant.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                          {plant.healthScore}%
+                        </span>
+                      </div>
+                      <Progress 
+                        value={plant.healthScore} 
+                        className="h-3"
+                      />
+                    </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1">
-                        <Flame className="w-3 h-3" />
+                      <span className="flex items-center gap-2 text-orange-600 font-medium">
+                        <Flame className="w-4 h-4" />
                         {plant.streak} day streak
                       </span>
-                      <span className="text-muted-foreground">
-                        Last check: {plant.lastCheckIn}
+                      <span className="text-gray-500">
+                        {plant.lastCheckIn}
                       </span>
                     </div>
                   </CardContent>
@@ -245,16 +276,24 @@ export function Dashboard({ user, onScanPlant }: DashboardProps) {
               ))}
               
               {plants.length > 0 && (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center h-full min-h-[200px] space-y-3">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🌱</span>
+                <Card className="border-2 border-dashed border-green-300 card-hover">
+                  <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-3xl">🌱</span>
                     </div>
-                    <p className="text-center text-muted-foreground">
-                      Scan a new plant to add it to your garden
-                    </p>
-                    <Button onClick={onScanPlant} variant="outline">
-                      Add Plant
+                    <div className="text-center space-y-2">
+                      <p className="text-lg font-medium text-gray-700">
+                        Add More Plants
+                      </p>
+                      <p className="text-gray-500">
+                        Scan a new plant to expand your garden
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={onScanPlant} 
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      📸 Scan New Plant
                     </Button>
                   </CardContent>
                 </Card>

@@ -42,18 +42,16 @@ jobs:
         env:
           REGISTRY: ${{ steps.ecr-reg.outputs.registry }}
         run: |
-          IMAGE_URI_SHA=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          IMAGE_URI_LATEST=$REGISTRY/$ECR_REPOSITORY:latest
-          
-          echo "Building image with tags: $IMAGE_URI_SHA and $IMAGE_URI_LATEST"
-          
-          # Build once, then tag with both
-          docker build -f backend/Dockerfile -t $IMAGE_URI_SHA .
-          docker tag $IMAGE_URI_SHA $IMAGE_URI_LATEST
-          
-          # Push both
-          docker push $IMAGE_URI_SHA
-          docker push $IMAGE_URI_LATEST
+          IMAGE_URI=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "Building $IMAGE_URI"
+          # Use backend/ as build context
+          docker build -f backend/Dockerfile -t $IMAGE_URI ./backend
+          # Tag latest
+          docker tag $IMAGE_URI $REGISTRY/$ECR_REPOSITORY:latest
+          # Push both tags
+          docker push $IMAGE_URI
+          docker push $REGISTRY/$ECR_REPOSITORY:latest
+
 
       - name: Output image URIs
         run: |

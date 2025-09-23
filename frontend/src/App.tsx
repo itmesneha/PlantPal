@@ -1,9 +1,10 @@
+// src/App.tsx
 import { useState } from 'react';
-import { AuthForm } from '../components/AuthForm';
-import { Dashboard } from '../components/Dashboard';
-import { PlantScanner } from '../components/PlantScanner';
-import { PlantHealthReport } from '../components/PlantHealthReport';
-import { Button } from '../components/ui/button';
+import { AuthForm } from './components/AuthForm';
+import { Dashboard } from './components/Dashboard';
+import { PlantScanner } from './components/PlantScanner';
+import { PlantHealthReport } from './components/PlantHealthReport';
+import { Button } from './components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 interface User {
@@ -23,7 +24,7 @@ interface PlantScanResult {
 
 type AppState = 'auth' | 'dashboard' | 'scanner' | 'results';
 
-export default function App() {
+function App() {
   const [currentState, setCurrentState] = useState<AppState>('auth');
   const [user, setUser] = useState<User | null>(null);
   const [scanResult, setScanResult] = useState<PlantScanResult | null>(null);
@@ -40,7 +41,7 @@ export default function App() {
   };
 
   const handleAddToGarden = () => {
-    // In real app, this would save to database
+    // In real app, this would save to backend
     console.log('Adding plant to garden:', scanResult);
     setCurrentState('dashboard');
   };
@@ -99,3 +100,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;

@@ -20,12 +20,6 @@ interface PlantHealthReportProps {
 }
 
 export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealthReportProps) {
-  const getHealthColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
   const getHealthBadgeVariant = (score: number) => {
     if (score >= 80) return 'default';
     if (score >= 60) return 'secondary';

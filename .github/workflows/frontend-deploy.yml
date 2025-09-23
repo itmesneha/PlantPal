@@ -22,36 +22,21 @@ jobs:
         with:
           node-version: 20
 
-      # 3. Debug - Check file structure
-      - name: Debug - List files
-        run: |
-          echo "=== Root directory ==="
-          ls -la
-          echo "=== Frontend directory ==="
-          ls -la frontend/
-          echo "=== Frontend public directory ==="
-          ls -la frontend/public/
-          echo "=== Check if index.html exists ==="
-          if [ -f "frontend/public/index.html" ]; then
-            echo "✅ index.html found"
-            head -10 frontend/public/index.html
-          else
-            echo "❌ index.html NOT found"
-          fi
-
-      # 4. Install dependencies
+      # 3. Install dependencies
       - name: Install dependencies
         run: |
           cd frontend
           npm ci
 
-      # 5. Build React app
+      # 4. Build React app
       - name: Build React app
         run: |
           cd frontend
           npm run build
+        env:
+          CI: false
 
-      # 6. Configure AWS credentials
+      # 5. Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -59,7 +44,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 7. Deploy to S3
+      # 6. Deploy to S3
       - name: Deploy to S3
         run: |
           aws s3 sync frontend/build/ s3://${{ secrets.S3_BUCKET }} --delete --exact-timestamps

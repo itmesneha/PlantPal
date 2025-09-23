@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { Trophy, Award, Flame, Users, Calendar, TrendingUp } from 'lucide-react';
+import { Trophy, Flame, Users, TrendingUp } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 
 interface Plant {

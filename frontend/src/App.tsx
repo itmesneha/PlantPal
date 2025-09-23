@@ -28,7 +28,7 @@ function App() {
   const [currentState, setCurrentState] = useState<AppState>('auth');
   const [user, setUser] = useState<User | null>(null);
   const [scanResult, setScanResult] = useState<PlantScanResult | null>(null);
-  const [plantStreak, setPlantStreak] = useState(14); // Mock streak
+  const [plantStreak] = useState(14); // Mock streak
 
   const handleAuthSuccess = (userData: User) => {
     setUser(userData);

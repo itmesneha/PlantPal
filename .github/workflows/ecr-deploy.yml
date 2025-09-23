@@ -1,0 +1,53 @@
+name: Build and Push Backend to Amazon ECR
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ecr-deploy.yml'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract ECR registry
+        id: ecr-reg
+        run: echo "registry=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_OUTPUT
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.ecr-reg.outputs.registry }}
+        run: |
+          IMAGE_URI=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "Building $IMAGE_URI"
+          docker build -f backend/Dockerfile -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+      - name: Output image URI
+        run: echo "Image pushed: ${{ steps.ecr-reg.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+
+

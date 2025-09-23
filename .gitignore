@@ -146,7 +146,7 @@ dist/
 tmp/
 temp/
 
-# Python (for backend if using Python)
+# Python 
 __pycache__/
 *.py[cod]
 *$py.class
@@ -164,9 +164,8 @@ venv.bak/
 *.sqlite3
 
 # Docker
-.dockerignore
-Dockerfile*
-docker-compose*.yml
+# Ignore only local override docker-compose files
+docker-compose.override.yml
 
 # Terraform
 *.tfstate

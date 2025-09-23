@@ -196,7 +196,7 @@ Plant Pal will be deployed as a cloud-native service on AWS to ensure scalabilit
     \item Mock backend responses.
 \end{itemize}
 
-\subsection*{Phase 3: Backend Core (Weeks 3--4)}
+\subsection*{Phase 3: Backend Core}
 \begin{itemize}
     \item Set up FastAPI backend in ECS (Fargate).
     \item Implement image upload $\rightarrow$ S3.
@@ -204,14 +204,14 @@ Plant Pal will be deployed as a cloud-native service on AWS to ensure scalabilit
     \item Connect Cognito JWT validation.
 \end{itemize}
 
-\subsection*{Phase 4: ML Integration (Weeks 5--6)}
+\subsection*{Phase 4: ML Integration}
 \begin{itemize}
     \item Deploy Plant Detection model on SageMaker / HuggingFace / EC2.
     \item Deploy LLM recommendation model on SageMaker HuggingFace / EC2.
     \item Connect FastAPI $\rightarrow$ inference endpoints.
 \end{itemize}
 
-\subsection*{Phase 5: CI/CD \& Deployment (Week 7)}
+\subsection*{Phase 5: CI/CD \& Deployment}
 \begin{itemize}
     \item CI/CD with GitHub Actions:
     \begin{itemize}
@@ -221,12 +221,11 @@ Plant Pal will be deployed as a cloud-native service on AWS to ensure scalabilit
     \item Optionally monitoring via CloudWatch.
 \end{itemize}
 
-\subsection*{Phase 6: Testing \& Polishing (Week 8)}
+\subsection*{Phase 6: Testing \& Polishing}
 \begin{itemize}
     \item Test full flow end-to-end: user login $\rightarrow$ upload photo $\rightarrow$ ML inference $\rightarrow$ report + streaks.
     \item Fix bugs, polish UI, add gamification touches (leaderboard, streak badges).
 \end{itemize}
-
 
 \end{document}
 

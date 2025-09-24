@@ -35,14 +35,14 @@ function App() {
     setCurrentState('dashboard');
   };
 
-  const handleScanComplete = (result: PlantScanResult) => {
-    setScanResult(result);
-    setCurrentState('results');
+  const handleScanComplete = (scanResult: PlantScanResult) => {
+    // Add to garden functionality would go here
+    // For now, just set the scan result to show the result
+    setScanResult(scanResult);
   };
 
   const handleAddToGarden = () => {
     // In real app, this would save to backend
-    console.log('Adding plant to garden:', scanResult);
     setCurrentState('dashboard');
   };
 

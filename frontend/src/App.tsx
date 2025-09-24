@@ -6,6 +6,7 @@ import { PlantScanner } from './components/PlantScanner';
 import { PlantHealthReport } from './components/PlantHealthReport';
 import { Button } from './components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { signOut } from 'aws-amplify/auth';
 
 interface User {
   id: string;
@@ -46,6 +47,19 @@ function App() {
     setCurrentState('dashboard');
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setCurrentState('auth');
+      setScanResult(null);
+    } catch (error) {
+      // Handle sign out error silently or show user-friendly message
+      setUser(null);
+      setCurrentState('auth');
+    }
+  };
+
   const handleBack = () => {
     if (currentState === 'scanner') {
       setCurrentState('dashboard');
@@ -78,6 +92,7 @@ function App() {
           <Dashboard
             user={user}
             onScanPlant={() => setCurrentState('scanner')}
+            onSignOut={handleSignOut}
           />
         </div>
       )}

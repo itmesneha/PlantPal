@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { Trophy, Flame, Users, TrendingUp } from 'lucide-react';
+import { Trophy, Flame, Users, TrendingUp, LogOut } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 
 interface Plant {
@@ -29,9 +29,10 @@ interface Achievement {
 interface DashboardProps {
   user: { name: string };
   onScanPlant: () => void;
+  onSignOut: () => void;
 }
 
-export function Dashboard({ user, onScanPlant }: DashboardProps) {
+export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'plants' | 'achievements' | 'leaderboard'>('plants');
 
   // Mock data - in real app this would come from your database
@@ -118,13 +119,24 @@ export function Dashboard({ user, onScanPlant }: DashboardProps) {
             Track your plants, earn achievements, and grow your garden
           </p>
         </div>
-        <Button 
-          onClick={onScanPlant} 
-          className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-          size="lg"
-        >
-          📸 Scan New Plant
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <Button 
+            onClick={onScanPlant} 
+            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            size="lg"
+          >
+            📸 Scan New Plant
+          </Button>
+          <Button 
+            onClick={onSignOut} 
+            variant="outline"
+            size="lg"
+            className="border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all duration-300"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}

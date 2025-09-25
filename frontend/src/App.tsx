@@ -55,7 +55,7 @@ function App() {
           setUser(backendUser);
           setCurrentState('dashboard');
         } catch (backendError) {
-          console.error('Backend sync failed, but user is authenticated:', backendError);
+          console.error('Backend sync failed!, but user is authenticated:', backendError);
           // Fall back to showing auth form - user needs to sign in again
           setCurrentState('auth');
         }

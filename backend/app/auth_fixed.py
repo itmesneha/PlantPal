@@ -35,7 +35,7 @@ def get_cognito_public_keys():
         response.raise_for_status()
         return response.json()["keys"]
     except Exception as e:
-        print(f"❌ Failed to fetch Cognito public keys: {str(e)}")
+        print(f"❌  Failed to fetch Cognito public keys: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch Cognito public keys: {str(e)}"

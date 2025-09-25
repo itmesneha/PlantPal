@@ -215,3 +215,5 @@ docker-compose.override.yml
 
 # Local development
 .env*.local
+
+*.pem

@@ -5,10 +5,10 @@ from typing import List
 import os
 from dotenv import load_dotenv
 
-from .database import get_db, engine
-from .models import Base
-from . import models, schemas
-from .auth import get_current_user_info
+from app.database import get_db, engine
+from app.models import Base
+from app import models, schemas
+from app.auth import get_current_user_info
 
 # Load environment variables
 load_dotenv()

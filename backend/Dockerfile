@@ -3,13 +3,17 @@ FROM python:3.11-slim
 # Set workdir inside container
 WORKDIR /app
 
-# Copy requirements
+# Copy requirements first for better caching
 COPY requirements.txt .
 
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy everything from backend/
+# Copy application code
 COPY . .
 
-# Command to run your app
-CMD ["python", "app/main.py"]
+# Expose the port your app runs on
+EXPOSE 8000
+
+# Use uvicorn to run the FastAPI app in production
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

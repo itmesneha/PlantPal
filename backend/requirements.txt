@@ -1,3 +1,12 @@
 fastapi==0.115.4
 uvicorn[standard]==0.30.6
 httpx==0.28.1
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+pydantic==2.5.0
+alembic==1.13.1
+boto3==1.35.0
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+pillow==10.1.0

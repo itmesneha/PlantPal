@@ -1,18 +1,15 @@
 // src/App.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthForm } from './components/AuthForm';
 import { Dashboard } from './components/Dashboard';
 import { PlantScanner } from './components/PlantScanner';
 import { PlantHealthReport } from './components/PlantHealthReport';
 import { Button } from './components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { signOut } from 'aws-amplify/auth';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { signOut, getCurrentUser } from 'aws-amplify/auth';
+import { userService, User } from './services/userService';
+import { Callback } from './components/Callback';
 
 interface PlantScanResult {
   species: string;
@@ -23,17 +20,74 @@ interface PlantScanResult {
   careRecommendations: string[];
 }
 
-type AppState = 'auth' | 'dashboard' | 'scanner' | 'results';
+type AppState = 'loading' | 'auth' | 'dashboard' | 'scanner' | 'results';
+
+function AppWrapper() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/callback" element={<Callback />} />
+        <Route path="/*" element={<App />} />
+      </Routes>
+    </Router>
+  );
+}
 
 function App() {
-  const [currentState, setCurrentState] = useState<AppState>('auth');
+  const [currentState, setCurrentState] = useState<AppState>('loading');
   const [user, setUser] = useState<User | null>(null);
   const [scanResult, setScanResult] = useState<PlantScanResult | null>(null);
   const [plantStreak] = useState(14); // Mock streak
 
-  const handleAuthSuccess = (userData: User) => {
-    setUser(userData);
-    setCurrentState('dashboard');
+  // Check if user is already authenticated on app load
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        console.log('✅ User is authenticated with Cognito:', currentUser);
+        // User is authenticated, try to sync with backend
+        try {
+          const backendUser = await userService.syncUserAfterAuth();
+          setUser(backendUser);
+          setCurrentState('dashboard');
+        } catch (backendError) {
+          console.error('Backend sync failed, but user is authenticated:', backendError);
+          // Fall back to showing auth form - user needs to sign in again
+          setCurrentState('auth');
+        }
+      } else {
+        console.log('❌ No authenticated user found');
+        setCurrentState('auth');
+      }
+    } catch (error) {
+      console.error('Auth status check failed:', error);
+      setCurrentState('auth');
+    }
+  };
+
+  const handleAuthSuccess = async (userData: { id: string; name: string; email: string; }) => {
+    try {
+      // Sync user with backend after authentication
+      const backendUser = await userService.syncUserAfterAuth();
+      setUser(backendUser);
+      setCurrentState('dashboard');
+    } catch (error) {
+      console.error('Failed to sync user with backend:', error);
+      // Still proceed to dashboard with Cognito user data
+      const fallbackUser: User = {
+        id: userData.id,
+        cognito_user_id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        created_at: new Date().toISOString()
+      };
+      setUser(fallbackUser);
+      setCurrentState('dashboard');
+    }
   };
 
   const handleScanComplete = (scanResult: PlantScanResult) => {
@@ -67,6 +121,18 @@ function App() {
       setCurrentState('scanner');
     }
   };
+
+  // Loading state
+  if (currentState === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-green-600">Loading PlantPal...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
@@ -116,4 +182,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppWrapper;

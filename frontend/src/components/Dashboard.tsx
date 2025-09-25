@@ -26,8 +26,17 @@ interface Achievement {
   requirement: number;
 }
 
+interface User {
+  id: string;
+  cognito_user_id: string;
+  email: string;
+  name: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 interface DashboardProps {
-  user: { name: string };
+  user: User;
   onScanPlant: () => void;
   onSignOut: () => void;
 }
@@ -117,6 +126,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           </h1>
           <p className="text-lg text-gray-600">
             Track your plants, earn achievements, and grow your garden
+          </p>
+          <p className="text-sm text-gray-400">
+            Member since {new Date(user.created_at).toLocaleDateString()}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">

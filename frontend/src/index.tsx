@@ -1,32 +1,51 @@
+// src/index.tsx
+'use client';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { Amplify } from 'aws-amplify';
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'REACT_APP_USER_POOL_ID',
+  'REACT_APP_USER_POOL_CLIENT_ID', 
+  'REACT_APP_COGNITO_DOMAIN',
+  'REACT_APP_REDIRECT_SIGN_IN',
+  'REACT_APP_REDIRECT_SIGN_OUT'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+}
+
 const amplifyConfig = {
   Auth: {
     Cognito: {
-      region: "ap-southeast-1",
-      userPoolId: process.env.REACT_APP_USER_POOL_ID || "ap-southeast-1_km8Z7zM54",
-      userPoolClientId: process.env.REACT_APP_USER_POOL_CLIENT_ID || "1ugluq9v60811tf40482j6t6in",
-      // Optional: identity pool
-      // identityPoolId: process.env.REACT_APP_IDENTITY_POOL_ID,
-      // Optional: login mechanisms
+      userPoolId: process.env.REACT_APP_USER_POOL_ID!,
+      userPoolClientId: process.env.REACT_APP_USER_POOL_CLIENT_ID!,
       loginWith: {
+        oauth: {
+          domain: process.env.REACT_APP_COGNITO_DOMAIN!,
+          scopes: ["openid", "email", "profile"],
+          redirectSignIn: [process.env.REACT_APP_REDIRECT_SIGN_IN!],
+          redirectSignOut: [process.env.REACT_APP_REDIRECT_SIGN_OUT!],
+          responseType: "code" as const,
+        },
         email: true,
-        // phone: true,
-        // username: true
-      }
-    }
-  }
+        username: false,
+      },
+    },
+  },
 };
+
 
 Amplify.configure(amplifyConfig);
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
+
+
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <React.StrictMode>
     <App />

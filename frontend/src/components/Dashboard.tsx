@@ -82,7 +82,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       description: 'Keep all plants healthy for 30 days',
       icon: '👍',
       earned: false,
-      progress: 14,
+      progress: 15,
       requirement: 30
     },
     {

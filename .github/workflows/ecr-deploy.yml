@@ -57,3 +57,43 @@ jobs:
         run: |
           echo "Image pushed: ${{ steps.ecr-reg.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
           echo "Image pushed: ${{ steps.ecr-reg.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest"
+
+      - name: Update ECS task definition
+        id: task-def
+        run: |
+          # Download current task definition
+          aws ecs describe-task-definition --task-definition plantpal-task \
+            --query taskDefinition > task-definition.json
+          
+          # Update image URI in task definition
+          IMAGE_URI=${{ steps.ecr-reg.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          jq --arg IMAGE_URI "$IMAGE_URI" \
+             '.containerDefinitions[0].image = $IMAGE_URI' \
+             task-definition.json > updated-task-definition.json
+          
+          # Remove unwanted fields for registration
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' \
+             updated-task-definition.json > clean-task-definition.json
+          
+          echo "Updated task definition:"
+          cat clean-task-definition.json
+
+      - name: Register new task definition
+        id: register-task-def
+        run: |
+          # Register new task definition revision
+          NEW_TASK_DEF=$(aws ecs register-task-definition --cli-input-json file://clean-task-definition.json)
+          NEW_REVISION=$(echo $NEW_TASK_DEF | jq -r '.taskDefinition.revision')
+          echo "new-revision=$NEW_REVISION" >> $GITHUB_OUTPUT
+          echo "✅ Registered new task definition: plantpal-task:$NEW_REVISION"
+
+      - name: Update ECS service
+        run: |
+          # Update ECS service to use new task definition
+          aws ecs update-service \
+            --cluster fastapi-cluster \
+            --service fastapi-service \
+            --task-definition plantpal-task:${{ steps.register-task-def.outputs.new-revision }}
+          
+          echo "✅ ECS service updated to use plantpal-task:${{ steps.register-task-def.outputs.new-revision }}"
+          echo "💡 The new container will be deployed when the EC2 instance is running"

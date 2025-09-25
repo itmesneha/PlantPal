@@ -8,8 +8,8 @@ import { Amplify } from 'aws-amplify';
 
 // Validate required environment variables
 const requiredEnvVars = [
-  'REACT_APP_USER_POOL_ID',
-  'REACT_APP_USER_POOL_CLIENT_ID', 
+  'COGNITO_USER_POOL_ID',
+  'COGNITO_CLIENT_ID', 
   'REACT_APP_COGNITO_DOMAIN',
   'REACT_APP_REDIRECT_SIGN_IN',
   'REACT_APP_REDIRECT_SIGN_OUT'
@@ -23,8 +23,8 @@ if (missingEnvVars.length > 0) {
 const amplifyConfig = {
   Auth: {
     Cognito: {
-      userPoolId: process.env.REACT_APP_USER_POOL_ID!,
-      userPoolClientId: process.env.REACT_APP_USER_POOL_CLIENT_ID!,
+      userPoolId: process.env.COGNITO_USER_POOL_ID!,
+      userPoolClientId: process.env.COGNITO_CLIENT_ID!,
       loginWith: {
         oauth: {
           domain: process.env.REACT_APP_COGNITO_DOMAIN!,

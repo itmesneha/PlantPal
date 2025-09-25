@@ -85,10 +85,9 @@ def get_current_user(
         
         if not user:
             # User doesn't exist yet, create them from JWT claims
-            print(f"🔍 Creating user from JWT data: {user_info}")
             user_data = {
                 "cognito_user_id": user_info["cognito_user_id"],
-                "email": user_info.get("email") or f"{user_info['cognito_user_id']}@plantpal.local",
+                "email": user_info["email"],
                 "name": user_info.get("name") or user_info.get("username") or "Plant Lover"
             }
             user = models.User(**user_data)

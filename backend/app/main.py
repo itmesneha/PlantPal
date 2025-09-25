@@ -18,7 +18,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="PlantPal API",
-    description="Plant identification and care tracking API.",
+    description="Plant identification and care tracking API",
     version="1.0.0"
 )
 

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Camera, Upload, Loader2 } from 'lucide-react';
+import { Camera, Upload, Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from './ui/alert';
+import { plantScanService, ScanResult } from '../services/plantScanService';
 
 interface PlantScanResult {
   species: string;
@@ -13,75 +15,71 @@ interface PlantScanResult {
 }
 
 interface PlantScannerProps {
-  onScanComplete: (result: PlantScanResult) => void;
+  onScanComplete: (result: PlantScanResult, originalFile: File) => void;
 }
 
 export function PlantScanner({ onScanComplete }: PlantScannerProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Reset error
+    setError(null);
+
+    // Validate file
+    const validation = plantScanService.validateImageFile(file);
+    if (!validation.isValid) {
+      setError(validation.error || 'Invalid file');
+      return;
     }
+
+    // Store file for API call
+    setSelectedFile(file);
+
+    // Create preview
+    const reader = new FileReader(); 
+    reader.onload = (e) => {
+      setSelectedImage(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleScan = async () => {
-    if (!selectedImage) return;
+    if (!selectedFile) return;
     
     setScanning(true);
+    setError(null);
     
-    // Mock AI analysis - in real app this would call Hugging Face API
-    setTimeout(() => {
-      const mockResults: PlantScanResult[] = [
-        {
-          species: 'Rose (Rosa rubiginosa)',
-          confidence: 0.94,
-          isHealthy: false,
-          disease: 'Black Spot Disease',
-          healthScore: 65,
-          careRecommendations: [
-            'Remove affected leaves immediately',
-            'Apply fungicide spray weekly',
-            'Improve air circulation around plant',
-            'Water at soil level, avoid wetting leaves'
-          ]
-        },
-        {
-          species: 'Monstera Deliciosa',
-          confidence: 0.91,
-          isHealthy: true,
-          healthScore: 92,
-          careRecommendations: [
-            'Water when top 2 inches of soil are dry',
-            'Provide bright, indirect light',
-            'Fertilize monthly during growing season',
-            'Mist leaves regularly for humidity'
-          ]
-        },
-        {
-          species: 'Snake Plant (Sansevieria)',
-          confidence: 0.88,
-          isHealthy: true,
-          healthScore: 85,
-          careRecommendations: [
-            'Water sparingly - every 2-3 weeks',
-            'Tolerates low light conditions',
-            'Fertilize 2-3 times per year',
-            'Dust leaves monthly for optimal photosynthesis'
-          ]
-        }
-      ];
+    try {
+      console.log('🚀 Starting plant scan...');
       
-      const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-      onScanComplete(randomResult);
+      // Call the real API
+      const result: ScanResult = await plantScanService.scanPlantImage(selectedFile);
+      
+      // Transform API response to match component interface
+      const transformedResult: PlantScanResult = {
+        species: result.species,
+        confidence: result.confidence,
+        isHealthy: result.is_healthy,
+        disease: result.disease || undefined,
+        healthScore: result.health_score,
+        careRecommendations: result.care_recommendations
+      };
+      
+      console.log('✅ Plant scan completed:', transformedResult);
+      onScanComplete(transformedResult, selectedFile);
+      
+    } catch (error) {
+      console.error('❌ Plant scan failed:', error);
+      setError(error instanceof Error ? error.message : 'Failed to scan plant. Please try again.');
+    } finally {
       setScanning(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -96,15 +94,26 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
           {selectedImage ? (
             <div className="space-y-4">
-              {/* <ImageWithFallback
+              <img
                 src={selectedImage}
                 alt="Selected plant"
-                className="max-w-full max-h-64 mx-auto rounded-lg"
-              /> */}
-              <Button onClick={handleScan} disabled={scanning} className="w-full">
+                className="max-w-full max-h-64 mx-auto rounded-lg object-contain"
+              />
+              <div className="text-sm text-gray-500">
+                {selectedFile && `File: ${selectedFile.name} (${plantScanService.formatFileSize(selectedFile.size)})`}
+              </div>
+              <Button onClick={handleScan} disabled={scanning || !selectedFile} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
                 {scanning ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -130,13 +139,14 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
                 <input
                   id="plant-image"
                   type="file"
-                  accept="image/*"
+                  accept={plantScanService.getSupportedImageTypes()}
                   onChange={handleImageUpload}
                   className="hidden"
                 />
               </div>
               <p className="text-gray-500">
-                Take a clear photo of your plant's leaves and stems
+                Take a clear photo of your plant's leaves and stems<br />
+                <span className="text-xs">Supported formats: JPEG, PNG, GIF, WebP (Max 10MB)</span>
               </p>
             </div>
           )}
@@ -145,7 +155,11 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
         {selectedImage && !scanning && (
           <Button 
             variant="outline" 
-            onClick={() => setSelectedImage(null)}
+            onClick={() => {
+              setSelectedImage(null);
+              setSelectedFile(null);
+              setError(null);
+            }}
             className="w-full"
           >
             Choose Different Photo

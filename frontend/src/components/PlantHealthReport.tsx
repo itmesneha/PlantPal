@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { gardenService, AddToGardenRequest } from '../services/gardenService';
 
 interface PlantScanResult {
   species: string;
@@ -16,14 +17,66 @@ interface PlantScanResult {
 interface PlantHealthReportProps {
   result: PlantScanResult;
   streak: number;
-  onAddToGarden: () => void;
+  onAddToGarden?: (plantId: string, plantName: string) => void; // Optional callback with plant details
+  originalImage?: File; // Original image file for adding to garden
 }
 
-export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealthReportProps) {
-  const getHealthBadgeVariant = (score: number) => {
-    if (score >= 80) return 'default';
-    if (score >= 60) return 'secondary';
-    return 'destructive';
+export function PlantHealthReport({ result, streak, onAddToGarden, originalImage }: PlantHealthReportProps) {
+  const [isAddingToGarden, setIsAddingToGarden] = useState(false);
+  const [addToGardenStatus, setAddToGardenStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  
+  const handleAddToGarden = async () => {
+    setIsAddingToGarden(true);
+    setAddToGardenStatus('idle');
+    setErrorMessage('');
+
+    try {
+      // Prepare the request data
+      const plantName = result.species || 'My Plant'; // Default name
+      
+      const addRequest: AddToGardenRequest = {
+        plant_name: plantName,
+        species: result.species,
+        common_name: result.species, // Use species as common name for now
+        health_score: result.healthScore,
+        care_notes: result.careRecommendations.join('; '), // Join recommendations as notes
+      };
+
+      // Add image data if available
+      if (originalImage) {
+        try {
+          const base64Image = await gardenService.convertImageToBase64(originalImage);
+          addRequest.image_data = base64Image;
+        } catch (imageError) {
+          console.warn('Failed to convert image, proceeding without image:', imageError);
+        }
+      }
+
+      // Call the API
+      const response = await gardenService.addToGarden(addRequest);
+      
+      console.log('🌱 Plant added to garden:', response);
+      setAddToGardenStatus('success');
+      
+      // Call the parent callback if provided
+      if (onAddToGarden) {
+        onAddToGarden(response.plant_id, response.plant.name);
+      }
+
+    } catch (error) {
+      console.error('❌ Failed to add plant to garden:', error);
+      setAddToGardenStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to add plant to garden');
+    } finally {
+      setIsAddingToGarden(false);
+    }
+  };
+
+  const getHealthScoreColor = (score: number) => {
+    if (score >= 70) return 'bg-green-600 text-white hover:bg-green-700';
+    if (score >= 50) return 'bg-yellow-600 text-white hover:bg-yellow-700';
+    return 'bg-red-600 text-white hover:bg-red-700';
   };
 
   const getCareIcon = (recommendation: string) => {
@@ -34,80 +87,223 @@ export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealth
   };
 
   return (
-    <div className="space-y-6 w-full max-w-2xl mx-auto">
+    <div className="space-y-6 w-full max-w-4xl mx-auto">
       {/* Main Results Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Plant Identification Results</span>
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
+          <CardTitle className="flex items-center justify-between text-2xl">
+            <span className="font-light flex items-center gap-3">
+              🌿 Analysis Results
+            </span>
             <div className="flex items-center gap-2">
               {result.isHealthy ? (
-                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">Healthy</span>
+                </div>
               ) : (
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                <div className="flex items-center gap-2 bg-yellow-100 px-3 py-1 rounded-full">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-700">Needs Care</span>
+                </div>
               )}
             </div>
           </CardTitle>
-          <CardDescription>
-            Confidence: {Math.round(result.confidence * 100)}%
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="mb-2">Species</h3>
-            <p className="text-lg">{result.species}</p>
-          </div>
-          
-          <div>
-            <h3 className="mb-2">Health Score</h3>
-            <div className="flex items-center gap-3">
-              <Progress value={result.healthScore} className="flex-1" />
-              <Badge variant={getHealthBadgeVariant(result.healthScore)}>
-                {result.healthScore}/100
-              </Badge>
-            </div>
-          </div>
-
-          {!result.isHealthy && result.disease && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Disease Detected:</strong> {result.disease}
-              </AlertDescription>
-            </Alert>
+          {!result.isHealthy && result.confidence > 0.5 && (
+            <CardDescription className="text-base">
+              AI Confidence: <span className="font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
+            </CardDescription>
           )}
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Species Information */}
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg border">
+                <h3 className="text-sm font-medium text-slate-600 mb-2">IDENTIFIED SPECIES</h3>
+                <p className="text-xl font-semibold text-slate-900">{result.species}</p>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-lg border">
+                <h3 className="text-sm font-medium text-slate-600 mb-2">CARE STREAK</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-orange-600">{streak}</span>
+                  <span className="text-slate-600">consecutive days</span>
+                  <span className="text-orange-500">🔥</span>
+                </div>
+              </div>
+            </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Health streak: {streak} days
-              </span>
+            {/* Health Score Section */}
+            <div className="space-y-4">
+              <div className="bg-white p-6 rounded-xl border-2 border-slate-200 shadow-sm">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Plant Health Score</h3>
+                  <div className={`inline-block rounded-full px-6 py-3 text-3xl font-bold ${getHealthScoreColor(result.healthScore)} shadow-lg`}>
+                    {Math.round(result.healthScore)}/100
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <Progress value={result.healthScore} className="h-4 bg-slate-200" />
+                </div>
+                
+                {/* Status Messages */}
+                <div className="text-center">
+                  {result.healthScore >= 90 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="text-green-700 font-semibold flex items-center justify-center gap-2">
+                        <CheckCircle className="w-5 h-5" />
+                        Excellent! Your plant is thriving! 🌟
+                      </div>
+                    </div>
+                  )}
+                  {result.healthScore >= 80 && result.healthScore < 90 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="text-green-600 font-semibold flex items-center justify-center gap-2">
+                        <CheckCircle className="w-5 h-5" />
+                        Great job! Very healthy plant! 🌱
+                      </div>
+                    </div>
+                  )}
+                  {result.healthScore >= 70 && result.healthScore < 80 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="text-blue-600 font-semibold">
+                        Good health - keep up the routine! 👍
+                      </div>
+                    </div>
+                  )}
+                  {result.healthScore < 70 && result.healthScore >= 50 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <div className="text-yellow-700 font-semibold">
+                        ⚠️ Needs attention - check recommendations
+                      </div>
+                    </div>
+                  )}
+                  {result.healthScore < 50 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <div className="text-red-700 font-semibold">
+                        🚨 Requires immediate care!
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Disease Alert */}
+          {!result.isHealthy && result.disease && (
+            <div className="mt-6">
+              <Alert className="border-orange-200 bg-orange-50">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  <div className="font-semibold">Disease Detected: {result.disease} </div>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Care Recommendations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Care Recommendations</CardTitle>
-          <CardDescription>
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <span>🩺</span>
+            Care Recommendations
+          </CardTitle>
+          <CardDescription className="text-base">
             {result.isHealthy 
-              ? 'Keep up the great work! Here are tips to maintain your plant\'s health:'
-              : 'Follow these steps to help your plant recover:'
+              ? 'Keep up the excellent work! Here are tips to maintain your plant\'s health:'
+              : 'Here are some recommendations to help your plant recover:'
             }
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {result.careRecommendations.map((recommendation, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                <div className="mt-0.5 text-muted-foreground">
-                  {getCareIcon(recommendation)}
+        <CardContent className="p-6">
+          {/* Treatment Information (for diseased plants) */}
+          {/* {!result.isHealthy && result.careRecommendations.length > 0 && 
+           result.careRecommendations[0].toLowerCase().includes('treatment') && (
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-orange-600" />
                 </div>
-                <p className="flex-1">{recommendation}</p>
+                <div>
+                  <h4 className="font-semibold text-orange-800 mb-1">Recommended Treatment</h4>
+                   <p className="text-orange-700 font-medium">{result.careRecommendations[0]}</p> 
+                </div>
+              </div>
+            </div>
+          )} */}
+
+          {/* Care Steps */}
+          <div className="grid gap-4">
+            {result.careRecommendations
+              .slice(result.isHealthy ? 0 : 1) // Skip first item for diseased plants (treatment info)
+              .map((recommendation, index) => (
+              <div key={index} className="group">
+                <div className="flex items-start gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 group-hover:bg-emerald-200 transition-colors">
+                      {getCareIcon(recommendation)}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-slate-700 leading-relaxed font-medium">
+                        {recommendation}
+                      </p>
+                      {/* <span className="flex-shrink-0 bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full font-medium">
+                        Step {index + 1}
+                      </span> */}
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
+          </div>
+          
+          {/* Action Button */}
+          <div className="mt-6 pt-4 border-t border-slate-200">
+            {/* Error Message */}
+            {addToGardenStatus === 'error' && errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">
+                  ❌ {errorMessage}
+                </p>
+              </div>
+            )}
+
+            <button 
+              onClick={handleAddToGarden}
+              disabled={isAddingToGarden || addToGardenStatus === 'success'}
+              className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
+                addToGardenStatus === 'success'
+                  ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
+                  : isAddingToGarden
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                {isAddingToGarden ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Adding to Garden...
+                  </>
+                ) : addToGardenStatus === 'success' ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Added to Garden
+                  </>
+                ) : (
+                  <>
+                    🌱 Add to My Garden
+                  </>
+                )}
+              </div>
+            </button>
           </div>
         </CardContent>
       </Card>

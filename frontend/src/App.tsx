@@ -10,6 +10,7 @@ import { ArrowLeft } from 'lucide-react';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { userService, User } from './services/userService';
 import { Callback } from './components/Callback';
+import { ToastProvider, useToast } from './context/ToastContext';
 
 interface PlantScanResult {
   species: string;
@@ -25,18 +26,22 @@ type AppState = 'loading' | 'auth' | 'dashboard' | 'scanner' | 'results';
 function AppWrapper() {
   return (
     <Router>
-      <Routes>
-        <Route path="/callback" element={<Callback />} />
-        <Route path="/*" element={<App />} />
-      </Routes>
+      <ToastProvider>
+        <Routes>
+          <Route path="/callback" element={<Callback />} />
+          <Route path="/*" element={<App />} />
+        </Routes>
+      </ToastProvider>
     </Router>
   );
 }
 
 function App() {
+  const { showSuccess } = useToast();
   const [currentState, setCurrentState] = useState<AppState>('loading');
   const [user, setUser] = useState<User | null>(null);
   const [scanResult, setScanResult] = useState<PlantScanResult | null>(null);
+  const [originalImageFile, setOriginalImageFile] = useState<File | null>(null); // Store original image
   const [plantStreak] = useState(14); // Mock streak
 
   // Check if user is already authenticated on app load
@@ -90,16 +95,28 @@ function App() {
     }
   };
 
-  const handleScanComplete = (scanResult: PlantScanResult) => {
-    // Add to garden functionality would go here
-    // For now, just set the scan result to show the result
+  const handleScanComplete = (scanResult: PlantScanResult, originalFile: File) => {
+    // Store the scan result and original image file
     setScanResult(scanResult);
-    setCurrentState('results')
+    setOriginalImageFile(originalFile);
+    setCurrentState('results');
   };
 
-  const handleAddToGarden = () => {
-    // In real app, this would save to backend
-    setCurrentState('dashboard');
+  const handleAddToGarden = (plantId: string, plantName: string) => {
+    // Plant successfully added to garden
+    console.log(`🌱 Plant "${plantName}" (ID: ${plantId}) added to garden!`);
+    
+    // Show success toast instead of browser alert
+    showSuccess(`🌱 Successfully added "${plantName}" to your garden!`, 4000);
+    
+    // Navigate back to dashboard after a short delay
+    setTimeout(() => {
+      setCurrentState('dashboard');
+      
+      // Clear the scan results
+      setScanResult(null);
+      setOriginalImageFile(null);
+    }, 1500); // Give user time to see the success message
   };
 
   const handleSignOut = async () => {
@@ -176,6 +193,7 @@ function App() {
             result={scanResult}
             streak={plantStreak}
             onAddToGarden={handleAddToGarden}
+            originalImage={originalImageFile || undefined}
           />
         </div>
       )}

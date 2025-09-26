@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { gardenService, AddToGardenRequest } from '../services/gardenService';
 
 interface PlantScanResult {
   species: string;
@@ -16,14 +17,60 @@ interface PlantScanResult {
 interface PlantHealthReportProps {
   result: PlantScanResult;
   streak: number;
-  onAddToGarden: () => void;
+  onAddToGarden?: (plantId: string, plantName: string) => void; // Optional callback with plant details
+  originalImage?: File; // Original image file for adding to garden
 }
 
-export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealthReportProps) {
-  const getHealthBadgeVariant = (score: number) => {
-    if (score >= 80) return 'default';
-    if (score >= 60) return 'secondary';
-    return 'destructive';
+export function PlantHealthReport({ result, streak, onAddToGarden, originalImage }: PlantHealthReportProps) {
+  const [isAddingToGarden, setIsAddingToGarden] = useState(false);
+  const [addToGardenStatus, setAddToGardenStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  
+  const handleAddToGarden = async () => {
+    setIsAddingToGarden(true);
+    setAddToGardenStatus('idle');
+    setErrorMessage('');
+
+    try {
+      // Prepare the request data
+      const plantName = result.species || 'My Plant'; // Default name
+      
+      const addRequest: AddToGardenRequest = {
+        plant_name: plantName,
+        species: result.species,
+        common_name: result.species, // Use species as common name for now
+        health_score: result.healthScore,
+        care_notes: result.careRecommendations.join('; '), // Join recommendations as notes
+      };
+
+      // Add image data if available
+      if (originalImage) {
+        try {
+          const base64Image = await gardenService.convertImageToBase64(originalImage);
+          addRequest.image_data = base64Image;
+        } catch (imageError) {
+          console.warn('Failed to convert image, proceeding without image:', imageError);
+        }
+      }
+
+      // Call the API
+      const response = await gardenService.addToGarden(addRequest);
+      
+      console.log('🌱 Plant added to garden:', response);
+      setAddToGardenStatus('success');
+      
+      // Call the parent callback if provided
+      if (onAddToGarden) {
+        onAddToGarden(response.plant_id, response.plant.name);
+      }
+
+    } catch (error) {
+      console.error('❌ Failed to add plant to garden:', error);
+      setAddToGardenStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to add plant to garden');
+    } finally {
+      setIsAddingToGarden(false);
+    }
   };
 
   const getHealthScoreColor = (score: number) => {
@@ -219,11 +266,43 @@ export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealth
           
           {/* Action Button */}
           <div className="mt-6 pt-4 border-t border-slate-200">
+            {/* Error Message */}
+            {addToGardenStatus === 'error' && errorMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">
+                  ❌ {errorMessage}
+                </p>
+              </div>
+            )}
+
             <button 
-              onClick={onAddToGarden}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+              onClick={handleAddToGarden}
+              disabled={isAddingToGarden || addToGardenStatus === 'success'}
+              className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
+                addToGardenStatus === 'success'
+                  ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
+                  : isAddingToGarden
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+              }`}
             >
-              🌱 Add to My Garden
+              <div className="flex items-center justify-center gap-2">
+                {isAddingToGarden ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Adding to Garden...
+                  </>
+                ) : addToGardenStatus === 'success' ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Added to Garden
+                  </>
+                ) : (
+                  <>
+                    🌱 Add to My Garden
+                  </>
+                )}
+              </div>
             </button>
           </div>
         </CardContent>

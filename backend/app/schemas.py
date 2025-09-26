@@ -34,6 +34,15 @@ class PlantBase(BaseModel):
 class PlantCreate(PlantBase):
     pass
 
+class AddToGardenRequest(BaseModel):
+    plant_name: str  # User's custom name for the plant
+    species: str  # From scan result
+    common_name: Optional[str] = None  # From scan result
+    location: Optional[str] = None  # Where they keep the plant
+    care_notes: Optional[str] = None  # Initial notes
+    health_score: Optional[float] = 100.0  # From scan result
+    image_data: Optional[str] = None  # Base64 encoded image (optional)
+
 class PlantUpdate(BaseModel):
     name: Optional[str] = None
     location: Optional[str] = None
@@ -52,6 +61,12 @@ class Plant(PlantBase):
     
     class Config:
         from_attributes = True
+
+class AddToGardenResponse(BaseModel):
+    success: bool
+    plant_id: str
+    message: str
+    plant: Plant
 
 # Scan Session schemas
 class ScanSessionCreate(BaseModel):

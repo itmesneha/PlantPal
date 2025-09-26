@@ -15,7 +15,7 @@ interface PlantScanResult {
 }
 
 interface PlantScannerProps {
-  onScanComplete: (result: PlantScanResult) => void;
+  onScanComplete: (result: PlantScanResult, originalFile: File) => void;
 }
 
 export function PlantScanner({ onScanComplete }: PlantScannerProps) {
@@ -72,7 +72,7 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
       };
       
       console.log('✅ Plant scan completed:', transformedResult);
-      onScanComplete(transformedResult);
+      onScanComplete(transformedResult, selectedFile);
       
     } catch (error) {
       console.error('❌ Plant scan failed:', error);

@@ -4,7 +4,12 @@ from dotenv import load_dotenv
 import os
 import requests
 import base64
-from typing import List
+import asyncio
+import aiohttp
+import json
+import io
+from typing import List, Optional
+from PIL import Image
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user_info
@@ -13,10 +18,100 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/v1", tags=["scan"])
 
+def compress_image(image_data: bytes, max_size_kb: int = 800, quality: int = 85) -> bytes:
+    """Compress image to reduce API call payload size"""
+    try:
+        # Open the image
+        img = Image.open(io.BytesIO(image_data))
+        
+        # Convert to RGB if necessary (for JPEG compatibility)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            img = img.convert('RGB')
+        
+        # Calculate target size
+        original_size = len(image_data)
+        target_size = max_size_kb * 1024
+        
+        if original_size <= target_size:
+            return image_data  # No compression needed
+        
+        # Resize if image is too large
+        max_dimension = 1024
+        if max(img.size) > max_dimension:
+            ratio = max_dimension / max(img.size)
+            new_size = tuple(int(dim * ratio) for dim in img.size)
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        
+        # Compress with quality adjustment
+        output = io.BytesIO()
+        img.save(output, format='JPEG', quality=quality, optimize=True)
+        compressed_data = output.getvalue()
+        
+        # If still too large, reduce quality further
+        while len(compressed_data) > target_size and quality > 20:
+            quality -= 10
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=quality, optimize=True)
+            compressed_data = output.getvalue()
+        
+        print(f"🗜️ Image compressed: {original_size/1024:.1f}KB → {len(compressed_data)/1024:.1f}KB (quality: {quality})")
+        return compressed_data
+        
+    except Exception as e:
+        print(f"❌ Image compression failed: {str(e)}")
+        return image_data  # Return original if compression fails
+
+async def query_plantnet_api_async(image_data: bytes) -> dict:
+    """Query the PlantNet API for plant species identification (async)"""
+    api_endpoint = "https://my-api.plantnet.org/v2/identify/all?api-key=2b101KziokKWnKjXiTmMtxNG"
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            data = aiohttp.FormData()
+            data.add_field('images', image_data, filename='plant_image.jpg', content_type='image/jpeg')
+            
+            async with session.post(api_endpoint, data=data, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                if response.status != 200:
+                    raise aiohttp.ClientError(f"PlantNet API returned status {response.status}")
+                return await response.json()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Error calling PlantNet API: {str(e)}"
+        )
+
+async def query_huggingface_model_async(image_data: bytes) -> dict:
+    """Query the Hugging Face plant disease detection model (async)"""
+    API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    
+    headers = {
+        "Authorization": f"Bearer {os.getenv('HF_TOKEN')}",
+        "Content-Type": "application/json"
+    }
+    
+    # Convert image to base64
+    image_base64 = base64.b64encode(image_data).decode()
+    payload = {"inputs": image_base64}
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(API_URL, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                if response.status != 200:
+                    raise aiohttp.ClientError(f"Hugging Face API returned status {response.status}")
+                result = await response.json()
+                print("✅ Hugging Face API response received (async)")
+                return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Error calling Hugging Face API: {str(e)}"
+        )
+
+# Synchronous versions for fallback
 def query_plantnet_api(image_data: bytes) -> dict:
     """Query the PlantNet API for plant species identification"""
-    api_endpoint =  f"https://my-api.plantnet.org/v2/identify/all?api-key={os.getenv('PLANTNET_API_KEY')}"
-
+    api_endpoint = "https://my-api.plantnet.org/v2/identify/all?api-key=2b101KziokKWnKjXiTmMtxNG"
+    
     try:
         files = [('images', ('plant_image.jpg', image_data, 'image/jpeg'))]
         
@@ -48,14 +143,97 @@ def query_huggingface_model(image_data: bytes) -> dict:
     try:
         response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
-        # print("✅ Hugging Face API response received")
-        # print(response.json())
+        print("✅ Hugging Face API response received")
         return response.json()
     except requests.exceptions.RequestException as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Error calling Hugging Face API: {str(e)}"
         )
+
+async def parse_disease_predictions_async(hf_response: List[dict], image_data: bytes = None) -> schemas.ScanResult:
+    """Parse Hugging Face response into our ScanResult format (async with caching)"""
+    if not hf_response or not isinstance(hf_response, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invalid response from disease detection model"
+        )
+    
+    # Always get species from PlantNet API first
+    species = "Unknown Plant Species"
+    if image_data:
+        try:
+            plantnet_response = await query_plantnet_api_async(image_data)
+            if plantnet_response.get('results') and len(plantnet_response['results']) > 0:
+                top_result = plantnet_response['results'][0]
+                species_info = top_result['species']
+                
+                # Get common name (preferred) or scientific name
+                common_names = species_info.get('commonNames', [])
+                if common_names:
+                    species = common_names[0]
+                else:
+                    species = species_info.get('scientificNameWithoutAuthor', 'Unknown Plant Species')
+        except Exception as e:
+            print(f"❌ PlantNet API error: {str(e)}")
+            # Fallback to extracting from Hugging Face labels if PlantNet fails
+            for prediction in hf_response:
+                label = prediction.get('label', '').lower()
+                if 'healthy' in label:
+                    formatted_healthy = prediction.get('label', '').replace('_', ' ').title()
+                    if 'Healthy' in formatted_healthy and 'Plant' in formatted_healthy:
+                        parts = formatted_healthy.replace('Healthy ', '').replace(' Plant', '')
+                        species = parts.strip()
+                        break
+                elif ' with ' in label:
+                    formatted_label = label.replace('_', ' ').title()
+                    if ' With ' in formatted_label:
+                        species = formatted_label.split(' With ', 1)[0]
+                        break
+    
+    # Get the top prediction for disease analysis
+    top_prediction = max(hf_response, key=lambda x: x.get('score', 0))
+    prediction_label = top_prediction.get('label', '').lower()
+    confidence = top_prediction.get('score', 0.0)
+    
+    # Determine if plant is healthy and has disease (only if confidence > 50%)
+    has_disease = 'healthy' not in prediction_label and confidence > 0.5
+    is_healthy = not has_disease
+    
+    if is_healthy:
+        disease = None
+        health_score = 100
+        care_recommendations = [
+            "Continue current care routine",
+            "Monitor regularly for any changes",
+            "Maintain proper watering and light conditions"
+        ]
+    else:
+        # Parse disease from label (confidence > 50%)
+        formatted_label = prediction_label.replace('_', ' ').title()
+        
+        if ' With ' in formatted_label:
+            parts = formatted_label.split(' With ', 1)
+            disease = parts[1]
+        else:
+            disease = formatted_label
+            
+        health_score = max(20.0, (1 - confidence) * 100)
+        care_recommendations = [
+            f"Treatment recommended for {disease}",
+            "Isolate plant to prevent spread",
+            "Consult plant care specialist",
+            "Adjust watering and humidity levels"
+        ]
+    
+    return schemas.ScanResult(
+        species=species,
+        confidence=confidence,
+        is_healthy=is_healthy,
+        disease=disease if not is_healthy else None,
+        health_score=health_score,
+        care_recommendations=care_recommendations
+    )
 
 def parse_disease_predictions(hf_response: List[dict], image_data: bytes = None) -> schemas.ScanResult:
     """Parse Hugging Face response into our ScanResult format"""
@@ -142,12 +320,12 @@ def parse_disease_predictions(hf_response: List[dict], image_data: bytes = None)
     )
 
 @router.post("/scan", response_model=schemas.ScanResult)
-def scan_plant(
+async def scan_plant(
     image: UploadFile = File(..., description="Plant image for disease detection"),
     user_info: dict = Depends(get_current_user_info),
     db: Session = Depends(get_db)
 ):
-    """Scan a plant for identification and health analysis using Hugging Face AI"""
+    """Scan a plant for identification and health analysis using Hugging Face AI (optimized)"""
     # Lookup user
     user = db.query(models.User).filter(
         models.User.cognito_user_id == user_info["cognito_user_id"]
@@ -174,8 +352,12 @@ def scan_plant(
         )
     
     try:
-        # Read image data
-        image_data = image.file.read()
+        # Read and compress image data
+        original_image_data = image.file.read()
+        print(f"📸 Processing image: {image.filename} ({len(original_image_data)/1024:.1f}KB)")
+        
+        # Compress image to reduce API payload size
+        compressed_image_data = compress_image(original_image_data)
         
         # Check if HF_TOKEN is available
         if not os.getenv('HF_TOKEN'):
@@ -194,11 +376,44 @@ def scan_plant(
                 ]
             )
         
-        # Call Hugging Face API
-        hf_response = query_huggingface_model(image_data)
+        # Call both APIs concurrently for better performance
+        print("🚀 Calling APIs concurrently...")
+        try:
+            plantnet_task = query_plantnet_api_async(compressed_image_data)
+            hf_task = query_huggingface_model_async(compressed_image_data)
+            
+            plantnet_response, hf_response = await asyncio.gather(
+                plantnet_task, hf_task, return_exceptions=True
+            )
+            
+            # Handle exceptions from concurrent calls
+            if isinstance(plantnet_response, Exception):
+                print(f"❌ PlantNet API failed: {plantnet_response}")
+                plantnet_response = {"results": []}  # Empty fallback
+            
+            if isinstance(hf_response, Exception):
+                print(f"❌ Hugging Face API failed: {hf_response}")
+                # Fallback to sync call or mock data
+                try:
+                    hf_response = query_huggingface_model(compressed_image_data)
+                except:
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="All AI services are currently unavailable"
+                    )
         
-        # Parse and return result
-        result = parse_disease_predictions(hf_response, image_data)
+        except Exception as e:
+            print(f"❌ Error in concurrent API calls: {str(e)}")
+            # Fallback to synchronous calls
+            try:
+                plantnet_response = query_plantnet_api(compressed_image_data)
+            except:
+                plantnet_response = {"results": []}
+            
+            hf_response = query_huggingface_model(compressed_image_data)
+        
+        # Parse and return result using async function
+        result = await parse_disease_predictions_async(hf_response, compressed_image_data)
         
         return result
         

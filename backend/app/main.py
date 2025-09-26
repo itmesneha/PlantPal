@@ -20,13 +20,21 @@ app = FastAPI(
 )
 
 # CORS configuration
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+origins = os.getenv(
+    "CORS_ORIGINS", 
+    "http://localhost:3000,http://plantpal-frontend-bucket.s3-website-ap-southeast-1.amazonaws.com"
+).split(",")
+
+# Strip whitespace from origins
+origins = [origin.strip() for origin in origins]
+
+print(f"🌐 CORS Origins configured: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

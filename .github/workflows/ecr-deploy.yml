@@ -71,11 +71,13 @@ jobs:
              --arg HF_TOKEN "${{ secrets.HF_TOKEN }}" \
              --arg PLANTNET_API_KEY "${{ secrets.PLANTNET_API_KEY }}" \
              --arg DATABASE_URL "${{ secrets.DATABASE_URL }}" \
+             --arg CORS_ORIGINS "${{ secrets.CORS_ORIGINS }}" \
              '.containerDefinitions[0].image = $IMAGE_URI |
               .containerDefinitions[0].environment = [
                 {"name": "HF_TOKEN", "value": $HF_TOKEN},
                 {"name": "PLANTNET_API_KEY", "value": $PLANTNET_API_KEY},
-                {"name": "DATABASE_URL", "value": $DATABASE_URL}
+                {"name": "DATABASE_URL", "value": $DATABASE_URL},
+                {"name": "CORS_ORIGINS", "value": $CORS_ORIGINS}
               ]' \
              task-definition.json > updated-task-definition.json
           

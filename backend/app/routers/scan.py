@@ -65,74 +65,48 @@ def parse_disease_predictions(hf_response: List[dict], image_data: bytes = None)
             detail="Invalid response from disease detection model"
         )
     
-    # Get the top prediction
+    # Always get species from PlantNet API first
+    species = "Unknown Plant Species"
+    if image_data:
+        try:
+            plantnet_response = query_plantnet_api(image_data)
+            if plantnet_response.get('results') and len(plantnet_response['results']) > 0:
+                top_result = plantnet_response['results'][0]
+                species_info = top_result['species']
+                
+                # Get common name (preferred) or scientific name
+                common_names = species_info.get('commonNames', [])
+                if common_names:
+                    species = common_names[0]
+                else:
+                    species = species_info.get('scientificNameWithoutAuthor', 'Unknown Plant Species')
+        except Exception as e:
+            print(f"❌ PlantNet API error: {str(e)}")
+            # Fallback to extracting from Hugging Face labels if PlantNet fails
+            for prediction in hf_response:
+                label = prediction.get('label', '').lower()
+                if 'healthy' in label:
+                    formatted_healthy = prediction.get('label', '').replace('_', ' ').title()
+                    if 'Healthy' in formatted_healthy and 'Plant' in formatted_healthy:
+                        parts = formatted_healthy.replace('Healthy ', '').replace(' Plant', '')
+                        species = parts.strip()
+                        break
+                elif ' with ' in label:
+                    formatted_label = label.replace('_', ' ').title()
+                    if ' With ' in formatted_label:
+                        species = formatted_label.split(' With ', 1)[0]
+                        break
+    
+    # Get the top prediction for disease analysis
     top_prediction = max(hf_response, key=lambda x: x.get('score', 0))
     prediction_label = top_prediction.get('label', '').lower()
     confidence = top_prediction.get('score', 0.0)
     
-    # Determine if plant is healthy based on prediction
-    is_healthy = 'healthy' in prediction_label or confidence < 0.5
+    # Determine if plant is healthy and has disease (only if confidence > 50%)
+    has_disease = 'healthy' not in prediction_label and confidence > 0.5
+    is_healthy = not has_disease
     
-    # Extract species and disease info
     if is_healthy:
-        # If confidence is low, use PlantNet API for better species identification
-        if confidence < 0.5 and image_data:
-            try:
-                plantnet_response = query_plantnet_api(image_data)
-                if plantnet_response.get('results') and len(plantnet_response['results']) > 0:
-                    top_result = plantnet_response['results'][0]
-                    species_info = top_result['species']
-                    
-                    # Get common name (preferred) or scientific name
-                    common_names = species_info.get('commonNames', [])
-                    if common_names:
-                        species = common_names[0]
-                    else:
-                        species = species_info.get('scientificNameWithoutAuthor', 'Unknown Plant Species')
-                else:
-                    species = "Unknown Plant Species"
-            except Exception as e:
-                print(f"❌ PlantNet API error: {str(e)}")
-                # Fallback to healthy label parsing
-                healthy_label = None
-                for prediction in hf_response:
-                    label = prediction.get('label', '').lower()
-                    if 'healthy' in label:
-                        healthy_label = prediction.get('label', '')
-                        break
-                
-                if healthy_label:
-                    # Extract species from healthy label (e.g., 'Healthy Grape Plant' -> 'Grape')
-                    formatted_healthy = healthy_label.replace('_', ' ').title()
-                    if 'Healthy' in formatted_healthy and 'Plant' in formatted_healthy:
-                        # Extract species between 'Healthy' and 'Plant'
-                        parts = formatted_healthy.replace('Healthy ', '').replace(' Plant', '')
-                        species = parts.strip()
-                    else:
-                        species = "Unknown Plant Species"
-                else:
-                    species = "Unknown Plant Species"
-        else:
-            # High confidence healthy prediction
-            healthy_label = None
-            for prediction in hf_response:
-                label = prediction.get('label', '').lower()
-                if 'healthy' in label:
-                    healthy_label = prediction.get('label', '')
-                    break
-            
-            if healthy_label:
-                # Extract species from healthy label (e.g., 'Healthy Grape Plant' -> 'Grape')
-                formatted_healthy = healthy_label.replace('_', ' ').title()
-                if 'Healthy' in formatted_healthy and 'Plant' in formatted_healthy:
-                    # Extract species between 'Healthy' and 'Plant'
-                    parts = formatted_healthy.replace('Healthy ', '').replace(' Plant', '')
-                    species = parts.strip()
-                else:
-                    species = "Unknown Plant Species"
-            else:
-                species = "Unknown Plant Species"
-            
         disease = None
         health_score = 100
         care_recommendations = [
@@ -141,16 +115,13 @@ def parse_disease_predictions(hf_response: List[dict], image_data: bytes = None)
             "Maintain proper watering and light conditions"
         ]
     else:
-        # Parse species and disease from label (e.g., 'Strawberry With Leaf Scorch')
+        # Parse disease from label (confidence > 50%)
         formatted_label = prediction_label.replace('_', ' ').title()
         
         if ' With ' in formatted_label:
             parts = formatted_label.split(' With ', 1)
-            species = parts[0]
             disease = parts[1]
         else:
-            # Fallback if format is different
-            species = "Affected Plant"
             disease = formatted_label
             
         health_score = max(20.0, (1 - confidence) * 100)

@@ -13,6 +13,22 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/v1", tags=["scan"])
 
+def query_plantnet_api(image_data: bytes) -> dict:
+    """Query the PlantNet API for plant species identification"""
+    api_endpoint =  f"https://my-api.plantnet.org/v2/identify/all?api-key={os.getenv('PLANTNET_API_KEY')}"
+
+    try:
+        files = [('images', ('plant_image.jpg', image_data, 'image/jpeg'))]
+        
+        response = requests.post(api_endpoint, files=files, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Error calling PlantNet API: {str(e)}"
+        )
+
 def query_huggingface_model(image_data: bytes) -> dict:
     """Query the Hugging Face plant disease detection model"""
     API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
@@ -32,6 +48,8 @@ def query_huggingface_model(image_data: bytes) -> dict:
     try:
         response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
+        # print("✅ Hugging Face API response received")
+        # print(response.json())
         return response.json()
     except requests.exceptions.RequestException as e:
         raise HTTPException(
@@ -39,7 +57,7 @@ def query_huggingface_model(image_data: bytes) -> dict:
             detail=f"Error calling Hugging Face API: {str(e)}"
         )
 
-def parse_disease_predictions(hf_response: List[dict]) -> schemas.ScanResult:
+def parse_disease_predictions(hf_response: List[dict], image_data: bytes = None) -> schemas.ScanResult:
     """Parse Hugging Face response into our ScanResult format"""
     if not hf_response or not isinstance(hf_response, list):
         raise HTTPException(
@@ -57,7 +75,64 @@ def parse_disease_predictions(hf_response: List[dict]) -> schemas.ScanResult:
     
     # Extract species and disease info
     if is_healthy:
-        species = "Unknown Plant Species"
+        # If confidence is low, use PlantNet API for better species identification
+        if confidence < 0.5 and image_data:
+            try:
+                plantnet_response = query_plantnet_api(image_data)
+                if plantnet_response.get('results') and len(plantnet_response['results']) > 0:
+                    top_result = plantnet_response['results'][0]
+                    species_info = top_result['species']
+                    
+                    # Get common name (preferred) or scientific name
+                    common_names = species_info.get('commonNames', [])
+                    if common_names:
+                        species = common_names[0]
+                    else:
+                        species = species_info.get('scientificNameWithoutAuthor', 'Unknown Plant Species')
+                else:
+                    species = "Unknown Plant Species"
+            except Exception as e:
+                print(f"❌ PlantNet API error: {str(e)}")
+                # Fallback to healthy label parsing
+                healthy_label = None
+                for prediction in hf_response:
+                    label = prediction.get('label', '').lower()
+                    if 'healthy' in label:
+                        healthy_label = prediction.get('label', '')
+                        break
+                
+                if healthy_label:
+                    # Extract species from healthy label (e.g., 'Healthy Grape Plant' -> 'Grape')
+                    formatted_healthy = healthy_label.replace('_', ' ').title()
+                    if 'Healthy' in formatted_healthy and 'Plant' in formatted_healthy:
+                        # Extract species between 'Healthy' and 'Plant'
+                        parts = formatted_healthy.replace('Healthy ', '').replace(' Plant', '')
+                        species = parts.strip()
+                    else:
+                        species = "Unknown Plant Species"
+                else:
+                    species = "Unknown Plant Species"
+        else:
+            # High confidence healthy prediction
+            healthy_label = None
+            for prediction in hf_response:
+                label = prediction.get('label', '').lower()
+                if 'healthy' in label:
+                    healthy_label = prediction.get('label', '')
+                    break
+            
+            if healthy_label:
+                # Extract species from healthy label (e.g., 'Healthy Grape Plant' -> 'Grape')
+                formatted_healthy = healthy_label.replace('_', ' ').title()
+                if 'Healthy' in formatted_healthy and 'Plant' in formatted_healthy:
+                    # Extract species between 'Healthy' and 'Plant'
+                    parts = formatted_healthy.replace('Healthy ', '').replace(' Plant', '')
+                    species = parts.strip()
+                else:
+                    species = "Unknown Plant Species"
+            else:
+                species = "Unknown Plant Species"
+            
         disease = None
         health_score = 100
         care_recommendations = [
@@ -152,7 +227,7 @@ def scan_plant(
         hf_response = query_huggingface_model(image_data)
         
         # Parse and return result
-        result = parse_disease_predictions(hf_response)
+        result = parse_disease_predictions(hf_response, image_data)
         
         return result
         

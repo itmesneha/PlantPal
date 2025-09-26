@@ -94,6 +94,7 @@ function App() {
     // Add to garden functionality would go here
     // For now, just set the scan result to show the result
     setScanResult(scanResult);
+    setCurrentState('results')
   };
 
   const handleAddToGarden = () => {

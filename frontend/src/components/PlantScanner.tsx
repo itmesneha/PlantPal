@@ -112,7 +112,8 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
               <div className="text-sm text-gray-500">
                 {selectedFile && `File: ${selectedFile.name} (${plantScanService.formatFileSize(selectedFile.size)})`}
               </div>
-              <Button onClick={handleScan} disabled={scanning || !selectedFile} className="w-full">
+              <Button onClick={handleScan} disabled={scanning || !selectedFile} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
                 {scanning ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

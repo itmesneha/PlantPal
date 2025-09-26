@@ -66,9 +66,18 @@ def parse_disease_predictions(hf_response: List[dict]) -> schemas.ScanResult:
             "Maintain proper watering and light conditions"
         ]
     else:
-        # Parse disease name from label
-        disease = prediction_label.replace('_', ' ').title()
-        species = "Affected Plant"
+        # Parse species and disease from label (e.g., 'Strawberry With Leaf Scorch')
+        formatted_label = prediction_label.replace('_', ' ').title()
+        
+        if ' With ' in formatted_label:
+            parts = formatted_label.split(' With ', 1)
+            species = parts[0]
+            disease = parts[1]
+        else:
+            # Fallback if format is different
+            species = "Affected Plant"
+            disease = formatted_label
+            
         health_score = max(20.0, (1 - confidence) * 100)
         care_recommendations = [
             f"Treatment recommended for {disease}",

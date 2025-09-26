@@ -151,7 +151,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealth
               <Alert className="border-orange-200 bg-orange-50">
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
                 <AlertDescription className="text-orange-800">
-                  <span className="font-semibold">Disease Detected:</span> {result.disease}
+                  <div className="font-semibold">Disease Detected: {result.disease} </div>
                 </AlertDescription>
               </Alert>
             </div>
@@ -175,7 +175,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealth
         </CardHeader>
         <CardContent className="p-6">
           {/* Treatment Information (for diseased plants) */}
-          {!result.isHealthy && result.careRecommendations.length > 0 && 
+          {/* {!result.isHealthy && result.careRecommendations.length > 0 && 
            result.careRecommendations[0].toLowerCase().includes('treatment') && (
             <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
               <div className="flex items-center gap-3">
@@ -184,11 +184,11 @@ export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealth
                 </div>
                 <div>
                   <h4 className="font-semibold text-orange-800 mb-1">Recommended Treatment</h4>
-                  <p className="text-orange-700 font-medium">{result.careRecommendations[0]}</p>
+                   <p className="text-orange-700 font-medium">{result.careRecommendations[0]}</p> 
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Care Steps */}
           <div className="grid gap-4">
@@ -207,9 +207,9 @@ export function PlantHealthReport({ result, streak, onAddToGarden }: PlantHealth
                       <p className="text-slate-700 leading-relaxed font-medium">
                         {recommendation}
                       </p>
-                      <span className="flex-shrink-0 bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full font-medium">
+                      {/* <span className="flex-shrink-0 bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full font-medium">
                         Step {index + 1}
-                      </span>
+                      </span> */}
                     </div>
                   </div>
                 </div>

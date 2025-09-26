@@ -15,7 +15,7 @@ export const Callback = () => {
       } catch (error) {
         console.error('Callback handling failed:', error);
         navigate('/auth'); // fallback to login
-      }
+      } 
     }
 
     handleCognitoRedirect();

@@ -63,7 +63,14 @@ def compress_image(image_data: bytes, max_size_kb: int = 800, quality: int = 85)
 
 async def query_plantnet_api_async(image_data: bytes) -> dict:
     """Query the PlantNet API for plant species identification (async)"""
-    api_endpoint = "https://my-api.plantnet.org/v2/identify/all?api-key=2b101KziokKWnKjXiTmMtxNG"
+    plantnet_api_key = os.getenv('PLANTNET_API_KEY')
+    if not plantnet_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="PlantNet API key not configured"
+        )
+    
+    api_endpoint = f"https://my-api.plantnet.org/v2/identify/all?api-key={plantnet_api_key}"
     
     try:
         async with aiohttp.ClientSession() as session:
@@ -110,7 +117,14 @@ async def query_huggingface_model_async(image_data: bytes) -> dict:
 # Synchronous versions for fallback
 def query_plantnet_api(image_data: bytes) -> dict:
     """Query the PlantNet API for plant species identification"""
-    api_endpoint = "https://my-api.plantnet.org/v2/identify/all?api-key=2b101KziokKWnKjXiTmMtxNG"
+    plantnet_api_key = os.getenv('PLANTNET_API_KEY')
+    if not plantnet_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="PlantNet API key not configured"
+        )
+    
+    api_endpoint = f"https://my-api.plantnet.org/v2/identify/all?api-key={plantnet_api_key}"
     
     try:
         files = [('images', ('plant_image.jpg', image_data, 'image/jpeg'))]

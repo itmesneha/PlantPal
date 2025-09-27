@@ -115,7 +115,7 @@ jobs:
 
       - name: Update ECS service (stop → restart)
         run: |
-          echo "🛑 Stopping service to free memory..."
+          echo "🛑 Stopping service to free memory...."
           aws ecs update-service \
             --cluster fastapi-cluster \
             --service fastapi-service \

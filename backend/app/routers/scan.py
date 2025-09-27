@@ -340,41 +340,62 @@ async def scan_plant(
     db: Session = Depends(get_db)
 ):
     """Scan a plant for identification and health analysis using Hugging Face AI (optimized)"""
-    # Lookup user
-    user = db.query(models.User).filter(
-        models.User.cognito_user_id == user_info["cognito_user_id"]
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Validate image file
-    if not image.content_type or not image.content_type.startswith('image/'):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an image"
-        )
-    
-    # Check file size (limit to 10MB)
-    if image.size and image.size > 10 * 1024 * 1024:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Image file too large (max 10MB)"
-        )
+    print("🚀 Starting scan_plant function...")
     
     try:
+        print(f"🔍 User info: {user_info}")
+        
+        # Lookup user
+        user = db.query(models.User).filter(
+            models.User.cognito_user_id == user_info["cognito_user_id"]
+        ).first()
+
+        if not user:
+            print(f"❌ User not found for cognito_user_id: {user_info['cognito_user_id']}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        print(f"✅ User found: {user.email}")
+        
+        # Validate image file
+        print(f"📎 Image details: filename={image.filename}, content_type={image.content_type}, size={image.size}")
+        
+        if not image.content_type or not image.content_type.startswith('image/'):
+            print(f"❌ Invalid content type: {image.content_type}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File must be an image"
+            )
+        
+        # Check file size (limit to 10MB)
+        if image.size and image.size > 10 * 1024 * 1024:
+            print(f"❌ File too large: {image.size} bytes")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Image file too large (max 10MB)"
+            )
+        
+        print("📸 Starting image processing...")
+        
         # Read and compress image data
         original_image_data = image.file.read()
-        print(f"📸 Processing image: {image.filename} ({len(original_image_data)/1024:.1f}KB)")
+        print(f"📸 Image read successfully: {len(original_image_data)/1024:.1f}KB")
         
         # Compress image to reduce API payload size
+        print("🗜️ Compressing image...")
         compressed_image_data = compress_image(original_image_data)
+        print(f"🗜️ Image compressed: {len(compressed_image_data)/1024:.1f}KB")
+        
+        # Check API keys
+        hf_token = os.getenv('HF_TOKEN')
+        plantnet_key = os.getenv('PLANTNET_API_KEY')
+        print(f"🔑 HF_TOKEN: {'Present' if hf_token else 'MISSING'}")
+        print(f"🔑 PLANTNET_API_KEY: {'Present' if plantnet_key else 'MISSING'}")
         
         # Check if HF_TOKEN is available
-        if not os.getenv('HF_TOKEN'):
+        if not hf_token:
             # Fallback to mock result if no API token
             return schemas.ScanResult(
                 species="Monstera deliciosa",
@@ -432,20 +453,28 @@ async def scan_plant(
         return result
         
     except Exception as e:
-        # Log error and return mock result as fallback
-        print(f"❌ Error in plant scan: {str(e)}")
+        # Log the full error for debugging
+        print(f"❌ ERROR in plant scan: {str(e)}")
+        print(f"❌ ERROR type: {type(e).__name__}")
+        import traceback
+        print(f"❌ ERROR traceback: {traceback.format_exc()}")
+        
+        # Return detailed error information in development
         return schemas.ScanResult(
-            species="Unknown Plant",
-            confidence=0.5,
-            is_healthy=True,
-            disease=None,
-            health_score=75.0,
+            species="Error Plant",
+            confidence=0.0,
+            is_healthy=False,
+            disease="Processing Error",
+            health_score=0.0,
             care_recommendations=[
-                "Unable to analyze image at this time",
-                "Please try again with a clearer image",
-                "Ensure good lighting and focus"
+                f"Error occurred: {str(e)[:200]}",
+                "Please try again with a different image",
+                "If problem persists, contact support"
             ]
         )
     finally:
         # Clean up
-        image.file.close()
+        try:
+            image.file.close()
+        except:
+            pass

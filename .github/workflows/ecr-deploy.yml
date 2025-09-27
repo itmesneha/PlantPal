@@ -4,8 +4,61 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'backend/**'
-      - '.github/workflows/ecr-deploy.yml'
+      -      - name: Update ECS service
+        run: |
+          # Stop service first to free memory for deployment
+          echo "🛑 Stopping service to free memory..."
+          aws ecs update-service \
+            --cluster fastapi-cluster \
+            --service fastapi-service \
+            --desired-count 0
+          
+          # Wait for tasks to stop
+          echo "⏳ Waiting for tasks to stop..."
+          sleep 30
+          
+          # Now start with new task definition
+          echo "🚀 Starting service with new task definition..."
+          aws ecs update-service \
+            --cluster fastapi-cluster \
+            --service fastapi-service \
+            --task-definition plantpal-task:${{ steps.register-task-def.outputs.new-revision }} \
+            --desired-count 1 \
+            --force-new-deployment
+          
+          echo "✅ ECS service updated to use plantpal-task:${{ steps.register-task-def.outputs.new-revision }}"
+          echo "🔄 Deployment initiated"
+          
+          # Check service status
+          echo "📊 Checking service status..."
+          aws ecs describe-services \
+            --cluster fastapi-cluster \
+            --services fastapi-service \
+            --query 'services[0].{Status:status,Running:runningCount,Pending:pendingCount,Desired:desiredCount}' \
+            --output table
+          
+          # Wait for deployment with timeout (5 minutes max)
+          echo "⏳ Waiting for deployment to complete (max 5 minutes)..."
+          timeout 300 aws ecs wait services-stable \
+            --cluster fastapi-cluster \
+            --services fastapi-service || {
+            echo "⚠️  Deployment timeout or failed after 5 minutes"
+            echo "📊 Final service status:"
+            aws ecs describe-services \
+              --cluster fastapi-cluster \
+              --services fastapi-service \
+              --query 'services[0].{Status:status,Running:runningCount,Pending:pendingCount,Desired:desiredCount,Deployments:deployments[*].{Status:status,TaskDefinition:taskDefinition}}' \
+              --output table
+            echo "🔍 Recent service events:"
+            aws ecs describe-services \
+              --cluster fastapi-cluster \
+              --services fastapi-service \
+              --query 'services[0].events[:5].[createdAt,message]' \
+              --output table
+            exit 1
+          }
+          
+          echo "✅ Deployment completed successfully!" - '.github/workflows/ecr-deploy.yml'
 
 jobs:
   build-and-push:
@@ -94,6 +147,33 @@ jobs:
           NEW_REVISION=$(echo $NEW_TASK_DEF | jq -r '.taskDefinition.revision')
           echo "new-revision=$NEW_REVISION" >> $GITHUB_OUTPUT
           echo "✅ Registered new task definition: plantpal-task:$NEW_REVISION"
+
+      - name: Check ECS cluster health
+        run: |
+          echo "🔍 Checking ECS cluster status..."
+          aws ecs describe-clusters \
+            --clusters fastapi-cluster \
+            --query 'clusters[0].{Status:status,Running:runningTasksCount,Pending:pendingTasksCount,Active:activeServicesCount}' \
+            --output table
+          
+          echo "🔍 Checking EC2 container instances..."
+          aws ecs list-container-instances \
+            --cluster fastapi-cluster \
+            --query 'containerInstanceArns' \
+            --output table
+          
+          # Get container instance details if any exist
+          INSTANCES=$(aws ecs list-container-instances --cluster fastapi-cluster --query 'containerInstanceArns' --output text)
+          if [ ! -z "$INSTANCES" ]; then
+            echo "📊 Container instance status:"
+            aws ecs describe-container-instances \
+              --cluster fastapi-cluster \
+              --container-instances $INSTANCES \
+              --query 'containerInstances[*].{Status:status,AgentConnected:agentConnected,RunningTasks:runningTasksCount,PendingTasks:pendingTasksCount}' \
+              --output table
+          else
+            echo "⚠️  No container instances found in cluster!"
+          fi
 
       - name: Update ECS service
         run: |

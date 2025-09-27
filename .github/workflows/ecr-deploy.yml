@@ -97,11 +97,20 @@ jobs:
 
       - name: Update ECS service
         run: |
-          # Update ECS service to use new task definition
+          # Update ECS service to use new task definition with forced deployment
           aws ecs update-service \
             --cluster fastapi-cluster \
             --service fastapi-service \
-            --task-definition plantpal-task:${{ steps.register-task-def.outputs.new-revision }}
+            --task-definition plantpal-task:${{ steps.register-task-def.outputs.new-revision }} \
+            --force-new-deployment
           
           echo "✅ ECS service updated to use plantpal-task:${{ steps.register-task-def.outputs.new-revision }}"
-          echo "💡 The new container will be deployed when the EC2 instance is running"
+          echo "� Forced new deployment initiated"
+          
+          # Wait for deployment to complete
+          echo "⏳ Waiting for deployment to complete..."
+          aws ecs wait services-stable \
+            --cluster fastapi-cluster \
+            --services fastapi-service
+          
+          echo "✅ Deployment completed successfully!"

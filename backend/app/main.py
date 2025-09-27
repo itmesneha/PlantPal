@@ -55,7 +55,8 @@ def read_root():
     return {
         "message": "Welcome to PlantPal API! 🌱",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
+        "status": "updated"
     }
 
 @app.get("/health")

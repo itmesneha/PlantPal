@@ -18,6 +18,27 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/v1", tags=["scan"])
 
+@router.get("/scan-test")
+async def scan_test():
+    """Simple test endpoint to check if scan route is working"""
+    return {"message": "Scan route is working!", "status": "ok"}
+
+@router.post("/scan-simple", response_model=schemas.ScanResult)
+async def scan_simple(
+    image: UploadFile = File(...),
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """Simplified scan endpoint for debugging"""
+    return schemas.ScanResult(
+        species="Test Plant",
+        confidence=0.95,
+        is_healthy=True,
+        disease=None,
+        health_score=100.0,
+        care_recommendations=["This is a test response"]
+    )
+
 def compress_image(image_data: bytes, max_size_kb: int = 800, quality: int = 85) -> bytes:
     """Compress image to reduce API call payload size"""
     try:

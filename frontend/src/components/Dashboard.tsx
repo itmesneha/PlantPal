@@ -7,6 +7,14 @@ import { Trophy, Flame, Users, TrendingUp, LogOut } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
+import plantUserIcon from '../assets/plant_user.png';
+import gardenIcon from '../assets/garden.png';
+import plantHealthIcon from '../assets/plantHealth.png';
+import TrophyIcon from '../assets/trophy.png';
+import myPlantsIcon from '../assets/my_plants.png';
+import starIcon from '../assets/star.png';
+import leaderboardIcon from '../assets/leaderboard.png';
+import myPlantCollectionIcon from '../assets/plant_collection.png';
 
 interface Plant {
   id: string;
@@ -126,7 +134,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent flex items-center">
             Welcome back, {user.name}!
             <img
-              src="https://cdn-icons-png.flaticon.com/512/2977/2977394.png"
+              src={plantUserIcon}
               width={32}
               alt="icon"
               className="inline-block ml-2 align-middle"
@@ -170,7 +178,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-2xl"><img
-                  src="https://cdn-icons-png.flaticon.com/512/7529/7529350.png"
+                  src={gardenIcon}
                   width={32}
                   height={32}
                   alt="icon"
@@ -190,7 +198,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
-                  src="https://cdn-icons-png.flaticon.com/512/1456/1456535.png"
+                  src={plantHealthIcon}
                   width={32}
                   height={32}
                   alt="icon"
@@ -211,7 +219,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
-                  src="https://cdn-icons-png.flaticon.com/512/1391/1391347.png"
+                  src={TrophyIcon}
                   width={32}
                   height={32}
                   alt="icon"
@@ -255,9 +263,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             }`}
         >
           <img
-            src="https://cdn-icons-png.flaticon.com/512/1390/1390941.png"
-            width={32}
-            height={32}
+            src={myPlantsIcon}
+            width={24}
+            height={24}
             alt="icon"
             className="inline-block"
           />
@@ -271,9 +279,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             }`}
         >
           <img
-            src="https://cdn-icons-png.flaticon.com/512/14069/14069128.png"
-            width={32}
-            height={32}
+            src={starIcon}
+            width={24}
+            height={24}
             alt="icon"
             className="inline-block"
           />
@@ -287,9 +295,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             }`}
         >
           <img
-            src="https://cdn-icons-png.flaticon.com/512/5200/5200866.png"
-            width={32}
-            height={32}
+            src={leaderboardIcon}
+            width={24}
+            height={24}
             alt="icon"
             className="inline-block"
           />
@@ -305,7 +313,16 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
 
           {/* Plant Cards Grid */}
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">🌿 Your Plant Collection</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <img
+                src={myPlantCollectionIcon}
+                width={32}
+                height={32}
+                alt="icon"
+                className="inline-block"
+              />
+              My Plant Collection
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {plants.map((plant) => (
                 <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg">

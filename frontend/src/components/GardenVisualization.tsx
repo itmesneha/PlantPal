@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import myGardenIcon from '../assets/my_garden.png';
 
 interface Plant {
   id: string;
@@ -21,7 +22,7 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
   const getPlantIcon = (species: string, healthScore: number) => {
     const isHealthy = healthScore >= 80;
     const isModerate = healthScore >= 60;
-    
+
     // Different SVG icons based on plant type and health
     if (species.toLowerCase().includes('monstera')) {
       return (
@@ -77,12 +78,13 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <img
-            src="https://cdn-icons-png.flaticon.com/512/1518/1518965.png"
+            src={myGardenIcon}
             width={32}
             height={32}
             alt="icon"
             className="inline-block"
-          /> My Garden
+          />
+          <h3 className="text-2xl font-bold text-gray-800">My Garden</h3>
         </CardTitle>
         <CardDescription>
           Visual overview of your plant collection
@@ -131,7 +133,7 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
                   </TooltipContent>
                 </Tooltip>
               ))}
-              
+
               {/* Add plant button */}
               <Tooltip>
                 <TooltipTrigger asChild>

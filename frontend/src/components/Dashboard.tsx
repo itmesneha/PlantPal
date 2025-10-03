@@ -6,6 +6,7 @@ import { Progress } from './ui/progress';
 import { Trophy, Flame, Users, TrendingUp, LogOut } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 import plantScanIcon from '../assets/plant_scan_icon.png';
+import fireIcon from '../assets/fire.png';
 
 interface Plant {
   id: string;
@@ -168,7 +169,13 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 <p className="text-3xl font-bold text-green-600">{plants.length}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl">🌱</span>
+                <span className="text-2xl"><img
+                  src="https://cdn-icons-png.flaticon.com/512/7529/7529350.png"
+                  width={32}
+                  height={32}
+                  alt="icon"
+                  className="inline-block"
+                /></span>
               </div>
             </div>
           </CardContent>
@@ -182,7 +189,14 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 <p className="text-3xl font-bold text-blue-600">{Math.round(totalHealthScore)}%</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/1456/1456535.png"
+                  width={32}
+                  height={32}
+                  alt="icon"
+                  className="inline-block"
+                />
+                {/* <TrendingUp className="w-6 h-6 text-blue-600" /> */}
               </div>
             </div>
           </CardContent>
@@ -196,7 +210,14 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 <p className="text-3xl font-bold text-yellow-600">{earnedAchievements}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
-                <Trophy className="w-6 h-6 text-yellow-600" />
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/1391/1391347.png"
+                  width={32}
+                  height={32}
+                  alt="icon"
+                  className="inline-block"
+                />
+                {/* <Trophy className="w-6 h-6 text-yellow-600" /> */}
               </div>
             </div>
           </CardContent>
@@ -210,7 +231,14 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 <p className="text-3xl font-bold text-orange-600">{Math.max(...plants.map(p => p.streak))}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center shadow-lg">
-                <Flame className="w-6 h-6 text-orange-600" />
+                <img
+                  src={fireIcon}
+                  width={32}
+                  height={32}
+                  alt="icon"
+                  className="inline-block"
+                />
+                {/* <Flame className="w-6 h-6 text-orange-600" /> */}
               </div>
             </div>
           </CardContent>
@@ -221,30 +249,51 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       <div className="flex space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100 w-fit">
         <button
           onClick={() => setActiveTab('plants')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'plants'
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'plants'
             ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
             : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
             }`}
         >
-          🌱 My Plants
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/1390/1390941.png"
+            width={32}
+            height={32}
+            alt="icon"
+            className="inline-block"
+          />
+          My Plants
         </button>
         <button
           onClick={() => setActiveTab('achievements')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'achievements'
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'achievements'
             ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
             : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
             }`}
         >
-          🏆 Achievements
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/14069/14069128.png"
+            width={32}
+            height={32}
+            alt="icon"
+            className="inline-block"
+          />
+          Achievements
         </button>
         <button
           onClick={() => setActiveTab('leaderboard')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'leaderboard'
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'leaderboard'
             ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
             : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
             }`}
         >
-          📊 Leaderboard
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/5200/5200866.png"
+            width={32}
+            height={32}
+            alt="icon"
+            className="inline-block"
+          />
+          Leaderboard
         </button>
       </div>
 

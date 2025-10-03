@@ -76,7 +76,13 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          🌻 My Garden
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/1518/1518965.png"
+            width={32}
+            height={32}
+            alt="icon"
+            className="inline-block"
+          /> My Garden
         </CardTitle>
         <CardDescription>
           Visual overview of your plant collection

@@ -143,7 +143,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             onClick={onScanPlant}
             variant="outline"
             size="lg"
-            className="border-green-400 text-green-500 hover:border-green-600 hover:text-green-600 hover:bg-green-50 transition-all duration-300">
+            className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
             <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> Scan New Plant
           </Button>
           <Button
@@ -222,8 +222,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         <button
           onClick={() => setActiveTab('plants')}
           className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'plants'
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
             }`}
         >
           🌱 My Plants
@@ -231,8 +231,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         <button
           onClick={() => setActiveTab('achievements')}
           className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'achievements'
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
             }`}
         >
           🏆 Achievements
@@ -240,8 +240,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         <button
           onClick={() => setActiveTab('leaderboard')}
           className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'leaderboard'
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
             }`}
         >
           📊 Leaderboard
@@ -265,10 +265,10 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
                       <Badge
                         className={`px-3 py-1 text-sm font-medium ${plant.healthScore >= 80
-                            ? 'bg-green-100 text-green-800 border-green-200'
-                            : plant.healthScore >= 60
-                              ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                              : 'bg-red-100 text-red-800 border-red-200'
+                          ? 'bg-green-100 text-green-800 border-green-200'
+                          : plant.healthScore >= 60
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                            : 'bg-red-100 text-red-800 border-red-200'
                           }`}
                       >
                         {plant.healthScore}/100
@@ -320,7 +320,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       onClick={onScanPlant}
                       variant="outline"
                       size="lg"
-                      className="border-green-400 text-green-500 hover:border-green-600 hover:text-green-600 hover:bg-green-50 transition-all duration-300">
+                      className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
                       <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> Scan New Plant
                     </Button>
                   </CardContent>
@@ -382,9 +382,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${entry.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
-                        entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
-                          entry.rank === 3 ? 'bg-orange-100 text-orange-800' :
-                            'bg-muted text-muted-foreground'
+                      entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
+                        entry.rank === 3 ? 'bg-orange-100 text-orange-800' :
+                          'bg-muted text-muted-foreground'
                       }`}>
                       #{entry.rank}
                     </div>

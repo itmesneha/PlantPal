@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Trophy, Flame, Users, TrendingUp, LogOut } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
+import plantScanIcon from '../assets/plant_scan_icon.png';
 
 interface Plant {
   id: string;
@@ -121,8 +122,14 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Welcome back, {user.name}! 🌱
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent flex items-center">
+            Welcome back, {user.name}!
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2977/2977394.png"
+              width={32}
+              alt="icon"
+              className="inline-block ml-2 align-middle"
+            />
           </h1>
           <p className="text-lg text-gray-600">
             Track your plants, earn achievements, and grow your garden
@@ -132,15 +139,15 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Button 
-            onClick={onScanPlant} 
-            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          <Button
+            onClick={onScanPlant}
+            variant="outline"
             size="lg"
-          >
-            📸 Scan New Plant
+            className="border-green-400 text-green-500 hover:border-green-600 hover:text-green-600 hover:bg-green-50 transition-all duration-300">
+            <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> Scan New Plant
           </Button>
-          <Button 
-            onClick={onSignOut} 
+          <Button
+            onClick={onSignOut}
             variant="outline"
             size="lg"
             className="border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all duration-300"
@@ -214,31 +221,28 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       <div className="flex space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100 w-fit">
         <button
           onClick={() => setActiveTab('plants')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${
-            activeTab === 'plants' 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'plants'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-          }`}
+            }`}
         >
           🌱 My Plants
         </button>
         <button
           onClick={() => setActiveTab('achievements')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${
-            activeTab === 'achievements' 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'achievements'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-          }`}
+            }`}
         >
           🏆 Achievements
         </button>
         <button
           onClick={() => setActiveTab('leaderboard')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${
-            activeTab === 'leaderboard' 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg' 
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium ${activeTab === 'leaderboard'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-          }`}
+            }`}
         >
           📊 Leaderboard
         </button>
@@ -249,7 +253,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         <div className="space-y-6">
           {/* Garden Visualization */}
           <GardenVisualization plants={plants} onScanPlant={onScanPlant} />
-          
+
           {/* Plant Cards Grid */}
           <div>
             <h3 className="text-2xl font-bold text-gray-800 mb-6">🌿 Your Plant Collection</h3>
@@ -259,14 +263,13 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
-                      <Badge 
-                        className={`px-3 py-1 text-sm font-medium ${
-                          plant.healthScore >= 80 
-                            ? 'bg-green-100 text-green-800 border-green-200' 
+                      <Badge
+                        className={`px-3 py-1 text-sm font-medium ${plant.healthScore >= 80
+                            ? 'bg-green-100 text-green-800 border-green-200'
                             : plant.healthScore >= 60
-                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                            : 'bg-red-100 text-red-800 border-red-200'
-                        }`}
+                              ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                              : 'bg-red-100 text-red-800 border-red-200'
+                          }`}
                       >
                         {plant.healthScore}/100
                       </Badge>
@@ -281,8 +284,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                           {plant.healthScore}%
                         </span>
                       </div>
-                      <Progress 
-                        value={plant.healthScore} 
+                      <Progress
+                        value={plant.healthScore}
                         className="h-3"
                       />
                     </div>
@@ -298,7 +301,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   </CardContent>
                 </Card>
               ))}
-              
+
               {plants.length > 0 && (
                 <Card className="border-2 border-dashed border-green-300 card-hover">
                   <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
@@ -313,11 +316,12 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                         Scan a new plant to expand your garden
                       </p>
                     </div>
-                    <Button 
-                      onClick={onScanPlant} 
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      📸 Scan New Plant
+                    <Button
+                      onClick={onScanPlant}
+                      variant="outline"
+                      size="lg"
+                      className="border-green-400 text-green-500 hover:border-green-600 hover:text-green-600 hover:bg-green-50 transition-all duration-300">
+                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> Scan New Plant
                     </Button>
                   </CardContent>
                 </Card>
@@ -373,17 +377,15 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               {leaderboard.map((entry) => (
                 <div
                   key={entry.rank}
-                  className={`flex items-center justify-between p-3 rounded-lg ${
-                    entry.name === user.name ? 'bg-primary/10 border' : 'bg-muted/50'
-                  }`}
+                  className={`flex items-center justify-between p-3 rounded-lg ${entry.name === user.name ? 'bg-primary/10 border' : 'bg-muted/50'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      entry.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
-                      entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
-                      entry.rank === 3 ? 'bg-orange-100 text-orange-800' :
-                      'bg-muted text-muted-foreground'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${entry.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
+                        entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
+                          entry.rank === 3 ? 'bg-orange-100 text-orange-800' :
+                            'bg-muted text-muted-foreground'
+                      }`}>
                       #{entry.rank}
                     </div>
                     <div>

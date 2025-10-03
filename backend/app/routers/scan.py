@@ -64,7 +64,7 @@ async def get_care_recommendations(
             "Content-Type": "application/json",
             "Authorization": f"Bearer {openrouter_api_key}"
         }
-        
+         
         payload = {
             "model": "google/gemma-3-27b-it:free",
             "messages": [

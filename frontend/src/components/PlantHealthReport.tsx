@@ -5,6 +5,8 @@ import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors, Loader2, Bot } fro
 import { useState, useEffect, useRef } from 'react';
 import { gardenService, AddToGardenRequest } from '../services/gardenService';
 import { plantScanService, CareRecommendationsResponse } from '../services/plantScanService';
+import analysisIcon from '../assets/analysis_results.png';
+import prescriptionIcon from '../assets/prescription.png';
 
 interface PlantScanResult {
   species: string;
@@ -29,39 +31,39 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
   const [aiCareRecommendations, setAiCareRecommendations] = useState<CareRecommendationsResponse | null>(null);
   const [isLoadingAiRecommendations, setIsLoadingAiRecommendations] = useState(false);
   const [aiRecommendationsError, setAiRecommendationsError] = useState<string>('');
-  
+
   // Refs to prevent duplicate API calls
   const lastRequestRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
-  
+
   // Automatically fetch AI care recommendations when disease is detected
   useEffect(() => {
     const fetchAiCareRecommendations = async () => {
       // Only fetch AI recommendations if plant is not healthy and has disease/confidence > 0.5
       if (!result.isHealthy && (result.disease || result.confidence > 0.5)) {
-        
+
         // Create a unique request identifier
         const requestKey = `${result.species}-${result.disease || 'unknown'}-${result.confidence}`;
-        
+
         // Prevent duplicate requests
         if (lastRequestRef.current === requestKey || isLoadingAiRecommendations) {
           console.log('🚫 Skipping duplicate AI recommendation request:', requestKey);
           return;
         }
-        
+
         // Cancel any existing request
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
         }
-        
+
         // Create new abort controller
         abortControllerRef.current = new AbortController();
         lastRequestRef.current = requestKey;
-        
+
         setIsLoadingAiRecommendations(true);
         setAiRecommendationsError('');
         setAiCareRecommendations(null); // Clear previous recommendations
-        
+
         try {
           console.log('🚀 Fetching AI care recommendations for:', {
             species: result.species,
@@ -69,19 +71,19 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
             confidence: result.confidence,
             requestKey
           });
-          
+
           const aiResponse = await plantScanService.getCareRecommendations({
             species: result.species,
             disease: result.disease || undefined
           });
-          
+
           // Only update if request wasn't aborted
           if (!abortControllerRef.current?.signal.aborted) {
             setAiCareRecommendations(aiResponse);
             console.log('🤖 AI care recommendations received:', aiResponse);
             console.log('📋 Recommendations count:', aiResponse.care_recommendations?.length);
           }
-          
+
         } catch (error) {
           // Only handle error if request wasn't aborted
           if (!abortControllerRef.current?.signal.aborted) {
@@ -103,9 +105,9 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
         lastRequestRef.current = '';
       }
     };
-    
+
     fetchAiCareRecommendations();
-    
+
     // Cleanup function
     return () => {
       if (abortControllerRef.current) {
@@ -114,7 +116,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
       }
     };
   }, [result.species, result.disease, result.isHealthy]); // Removed confidence from deps to prevent too many calls
-  
+
   const handleAddToGarden = async () => {
     setIsAddingToGarden(true);
     setAddToGardenStatus('idle');
@@ -123,7 +125,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
     try {
       // Prepare the request data
       const plantName = result.species || 'My Plant'; // Default name
-      
+
       const addRequest: AddToGardenRequest = {
         plant_name: plantName,
         species: result.species,
@@ -144,10 +146,10 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
 
       // Call the API
       const response = await gardenService.addToGarden(addRequest);
-      
+
       console.log('🌱 Plant added to garden:', response);
       setAddToGardenStatus('success');
-      
+
       // Call the parent callback if provided
       if (onAddToGarden) {
         onAddToGarden(response.plant_id, response.plant.name);
@@ -181,8 +183,15 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
           <CardTitle className="flex items-center justify-between text-2xl">
-            <span className="font-light flex items-center gap-3">
-              🌿 Analysis Results
+            <span className="font-light flex items-end gap-3">
+              <img
+                src={analysisIcon}
+                width={32}
+                height={32}
+                alt="icon"
+                className="inline-block"
+              />
+              <h3 className="text-2xl text-gray-800">Analysis Results</h3>
             </span>
             <div className="flex items-center gap-2">
               {result.isHealthy ? (
@@ -212,7 +221,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
                 <h3 className="text-sm font-medium text-slate-600 mb-2">IDENTIFIED SPECIES</h3>
                 <p className="text-xl font-semibold text-slate-900">{result.species}</p>
               </div>
-              
+
               <div className="bg-slate-50 p-4 rounded-lg border">
                 <h3 className="text-sm font-medium text-slate-600 mb-2">CARE STREAK</h3>
                 <div className="flex items-center gap-2">
@@ -232,11 +241,11 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
                     {Math.round(result.healthScore)}/100
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <Progress value={result.healthScore} className="h-4 bg-slate-200" />
                 </div>
-                
+
                 {/* Status Messages */}
                 <div className="text-center">
                   {result.healthScore >= 90 && (
@@ -299,11 +308,18 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b">
           <CardTitle className="flex items-center gap-2 text-xl">
-            <span>🩺</span>
-            Care Recommendations
+            <span><img
+              src={prescriptionIcon}
+              width={32}
+              height={32}
+              alt="icon"
+              className="inline-block"
+            />
+            </span>
+            <h4 className="text-2xl text-gray-800">Care Recommendations</h4>
           </CardTitle>
           <CardDescription className="text-base">
-            {result.isHealthy 
+            {result.isHealthy
               ? 'Keep up the excellent work! Here are tips to maintain your plant\'s health:'
               : 'Here are some recommendations to help your plant recover:'
             }
@@ -394,7 +410,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
               </div>
             </div>
           )}
-          
+
           {/* Action Button */}
           <div className="mt-6 pt-4 border-t border-slate-200">
             {/* Error Message */}
@@ -406,16 +422,15 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
               </div>
             )}
 
-            <button 
+            <button
               onClick={handleAddToGarden}
               disabled={isAddingToGarden || addToGardenStatus === 'success'}
-              className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
-                addToGardenStatus === 'success'
+              className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${addToGardenStatus === 'success'
                   ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
                   : isAddingToGarden
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
-              }`}
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                }`}
             >
               <div className="flex items-center justify-center gap-2">
                 {isAddingToGarden ? (

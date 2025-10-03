@@ -40,6 +40,229 @@ async def scan_simple(
         care_recommendations=["This is a test response"]
     )
 
+@router.post("/care-recommendations")
+async def get_care_recommendations(
+    request: dict,
+    user_info: dict = Depends(get_current_user_info)
+):
+    """Get AI-powered care recommendations for plants using OpenRouter API"""
+    try:
+        # Extract plant details from request
+        plant_species = request.get("species", "plant")
+        disease = request.get("disease", None)
+        
+        # Build the prompt based on available information
+        if disease:
+            prompt = f"Give me 4 sentences short actionable care instructions for taking care of a {plant_species} with {disease}."
+        else:
+            prompt = f"Give me 4 sentences short actionable care instructions for taking care of a {plant_species}."
+        
+        # OpenRouter API configuration
+        openrouter_api_key = os.getenv('OPENROUTER_API_KEY', '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')
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {openrouter_api_key}"
+        }
+        
+        payload = {
+            "model": "google/gemma-3-27b-it:free",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        print(f"🤖 Requesting care recommendations for: {prompt}")
+        
+        # Make API call to OpenRouter
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30
+            ) as response:
+                response.raise_for_status()
+                result = await response.json()
+                
+                # Extract the care recommendations from response
+                if 'choices' in result and len(result['choices']) > 0:
+                    content = result['choices'][0]['message']['content']
+                    
+                    # Clean up the content - remove extra whitespace and formatting
+                    content = content.strip()
+                    
+                    # Import regex at the top of this section
+                    import re
+                    
+                    # First, handle line breaks and normalize whitespace
+                    content = re.sub(r'\n+', '\n', content)  # Normalize multiple line breaks
+                    
+                    # Look for numbered lists (1., 2., 3.) or bullet points
+                    recommendations = []
+                    
+                    # Split by lines first to handle numbered/bulleted lists
+                    lines = [line.strip() for line in content.split('\n') if line.strip()]
+                    
+                    for line in lines:
+                        # Skip obvious header/intro lines but be more specific
+                        line_lower = line.lower().strip()
+                        
+                        # More specific patterns for intro lines to skip
+                        should_skip = False
+                        
+                        # Skip if it's clearly an introductory sentence (starts with these patterns)
+                        intro_starts = [
+                            'okay, here are',
+                            'here are 4 short',
+                            'here are 3 short', 
+                            'here are some',
+                            'below are 4',
+                            'below are 3',
+                            'here is a list',
+                            'these are the'
+                        ]
+                        
+                        for intro in intro_starts:
+                            if line_lower.startswith(intro):
+                                should_skip = True
+                                break
+                        
+                        # Skip standalone notes or empty lines
+                        if (line_lower.startswith('important note:') or 
+                            line_lower.startswith('note:') or
+                            line_lower.startswith('**important note') or
+                            len(line.strip()) < 5):
+                            should_skip = True
+                        
+                        if should_skip:
+                            continue
+                            
+                        # Clean up numbered lists (1., 2., 3.) and bullet points
+                        cleaned_line = line
+                        
+                        # Remove numbering patterns
+                        cleaned_line = re.sub(r'^\d+\.\s*', '', cleaned_line)  # Remove "1. "
+                        cleaned_line = re.sub(r'^\*+\s*', '', cleaned_line)    # Remove "* "
+                        cleaned_line = re.sub(r'^\-+\s*', '', cleaned_line)    # Remove "- "
+                        
+                        # Enhanced markdown formatting cleanup
+                        # Remove bold formatting but preserve emphasis with plain text
+                        cleaned_line = re.sub(r'\*\*(.*?)\*\*', r'\1', cleaned_line)  # **text** -> text
+                        cleaned_line = re.sub(r'\*(.*?)\*', r'\1', cleaned_line)      # *text* -> text
+                        
+                        # Clean up various markdown artifacts
+                        cleaned_line = re.sub(r'`([^`]+)`', r'\1', cleaned_line)     # `code` -> code
+                        cleaned_line = re.sub(r'_{2,}', '', cleaned_line)            # Remove multiple underscores
+                        cleaned_line = re.sub(r'\*{3,}', '', cleaned_line)           # Remove multiple asterisks
+                        
+                        # Handle special characters and formatting
+                        cleaned_line = re.sub(r'&amp;', '&', cleaned_line)           # Fix HTML entities
+                        cleaned_line = re.sub(r'&lt;', '<', cleaned_line)
+                        cleaned_line = re.sub(r'&gt;', '>', cleaned_line)
+                        
+                        # Clean up excessive punctuation and spacing
+                        cleaned_line = re.sub(r'\s+', ' ', cleaned_line)             # Multiple spaces -> single space
+                        cleaned_line = re.sub(r'([.!?]){2,}', r'\1', cleaned_line)   # Multiple punctuation -> single
+                        
+                        # Handle title-like formatting (preserve colons for clarity)
+                        cleaned_line = re.sub(r'^([^:]+):\s*', r'\1: ', cleaned_line)
+                        
+                        # Remove trailing/leading special characters
+                        cleaned_line = cleaned_line.strip(' *-_~')
+                        
+                        if cleaned_line and len(cleaned_line) > 10:  # Only include substantial recommendations
+                            recommendations.append(cleaned_line)
+                    
+                    # If we didn't find structured recommendations, fall back to sentence splitting
+                    if not recommendations:
+                        # Clean the content first
+                        clean_content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)  # Remove bold
+                        clean_content = re.sub(r'\*(.*?)\*', r'\1', clean_content)  # Remove italic
+                        clean_content = re.sub(r'`([^`]+)`', r'\1', clean_content)  # Remove code
+                        clean_content = re.sub(r'\s+', ' ', clean_content)          # Normalize spaces
+                        
+                        # Remove common introductory phrases more aggressively but more specifically
+                        intro_patterns = [
+                            r'(?i)^.*?okay,?\s*here are \d+.*?:',
+                            r'(?i)^.*?here are \d+ short.*?:',
+                            r'(?i)^.*?below are \d+.*?:',
+                            r'(?i)^.*?here is a list.*?:',
+                            r'(?i)^.*?these are the.*?:',
+                            r'(?i)^\s*important note:.*$',
+                            r'(?i)^\s*\*\*important note.*$'
+                        ]
+                        
+                        for pattern in intro_patterns:
+                            clean_content = re.sub(pattern, '', clean_content).strip()
+                        
+                        recommendations = [
+                            sentence.strip() 
+                            for sentence in clean_content.split('.') 
+                            if sentence.strip() and len(sentence.strip()) > 10
+                        ]
+                    
+                    # Final cleanup pass on all recommendations
+                    cleaned_recommendations = []
+                    for rec in recommendations:
+                        # One final cleanup
+                        final_rec = rec.strip()
+                        final_rec = re.sub(r'\s+', ' ', final_rec)  # Normalize spaces
+                        
+                        # Ensure proper sentence ending
+                        if final_rec and not final_rec.endswith(('.', '!', '?')):
+                            final_rec += '.'
+                            
+                        if final_rec and len(final_rec) > 10:
+                            cleaned_recommendations.append(final_rec)
+                    
+                    # Use cleaned recommendations or fallback
+                    recommendations = cleaned_recommendations if cleaned_recommendations else [content.strip()]
+                    
+                    print(f"✅ Generated {len(recommendations)} care recommendations")
+                    
+                    return {
+                        "species": plant_species,
+                        "disease": disease,
+                        "care_recommendations": recommendations[:5],  # Limit to 5 recommendations
+                        "source": "AI-powered by OpenRouter"
+                    }
+                else:
+                    print("❌ No content in OpenRouter response")
+                    raise HTTPException(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        detail="Invalid response from AI service"
+                    )
+                    
+    except aiohttp.ClientError as e:
+        print(f"❌ OpenRouter API error: {str(e)}")
+        # Fallback to generic recommendations
+        return {
+            "species": request.get("species", "plant"),
+            "disease": request.get("disease"),
+            "care_recommendations": [
+                "Ensure proper watering - soil should be moist but not waterlogged",
+                "Provide adequate light conditions for your plant species",
+                "Monitor for pests and diseases regularly and treat promptly"
+            ],
+            "source": "Fallback recommendations (AI service unavailable)"
+        }
+        
+    except Exception as e:
+        print(f"❌ Error getting care recommendations: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get care recommendations: {str(e)}"
+        )
+
 def compress_image(image_data: bytes, max_size_kb: int = 800, quality: int = 85) -> bytes:
     """Compress image to reduce API call payload size"""
     try:

@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors, Loader2, Bot } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { gardenService, AddToGardenRequest } from '../services/gardenService';
+import { plantScanService, CareRecommendationsResponse } from '../services/plantScanService';
 
 interface PlantScanResult {
   species: string;
@@ -25,6 +26,94 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
   const [isAddingToGarden, setIsAddingToGarden] = useState(false);
   const [addToGardenStatus, setAddToGardenStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [aiCareRecommendations, setAiCareRecommendations] = useState<CareRecommendationsResponse | null>(null);
+  const [isLoadingAiRecommendations, setIsLoadingAiRecommendations] = useState(false);
+  const [aiRecommendationsError, setAiRecommendationsError] = useState<string>('');
+  
+  // Refs to prevent duplicate API calls
+  const lastRequestRef = useRef<string>('');
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Automatically fetch AI care recommendations when disease is detected
+  useEffect(() => {
+    const fetchAiCareRecommendations = async () => {
+      // Only fetch AI recommendations if plant is not healthy and has disease/confidence > 0.5
+      if (!result.isHealthy && (result.disease || result.confidence > 0.5)) {
+        
+        // Create a unique request identifier
+        const requestKey = `${result.species}-${result.disease || 'unknown'}-${result.confidence}`;
+        
+        // Prevent duplicate requests
+        if (lastRequestRef.current === requestKey || isLoadingAiRecommendations) {
+          console.log('🚫 Skipping duplicate AI recommendation request:', requestKey);
+          return;
+        }
+        
+        // Cancel any existing request
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        
+        // Create new abort controller
+        abortControllerRef.current = new AbortController();
+        lastRequestRef.current = requestKey;
+        
+        setIsLoadingAiRecommendations(true);
+        setAiRecommendationsError('');
+        setAiCareRecommendations(null); // Clear previous recommendations
+        
+        try {
+          console.log('🚀 Fetching AI care recommendations for:', {
+            species: result.species,
+            disease: result.disease,
+            confidence: result.confidence,
+            requestKey
+          });
+          
+          const aiResponse = await plantScanService.getCareRecommendations({
+            species: result.species,
+            disease: result.disease || undefined
+          });
+          
+          // Only update if request wasn't aborted
+          if (!abortControllerRef.current?.signal.aborted) {
+            setAiCareRecommendations(aiResponse);
+            console.log('🤖 AI care recommendations received:', aiResponse);
+            console.log('📋 Recommendations count:', aiResponse.care_recommendations?.length);
+          }
+          
+        } catch (error) {
+          // Only handle error if request wasn't aborted
+          if (!abortControllerRef.current?.signal.aborted) {
+            console.error('❌ Failed to get AI care recommendations:', error);
+            setAiRecommendationsError(error instanceof Error ? error.message : 'Failed to get AI recommendations');
+            lastRequestRef.current = ''; // Reset on error to allow retry
+          }
+        } finally {
+          // Only update loading state if request wasn't aborted
+          if (!abortControllerRef.current?.signal.aborted) {
+            setIsLoadingAiRecommendations(false);
+          }
+        }
+      } else {
+        console.log('🔍 Skipping AI recommendations - plant is healthy or low confidence');
+        // Clear previous recommendations for healthy plants
+        setAiCareRecommendations(null);
+        setAiRecommendationsError('');
+        lastRequestRef.current = '';
+      }
+    };
+    
+    fetchAiCareRecommendations();
+    
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, [result.species, result.disease, result.isHealthy]); // Removed confidence from deps to prevent too many calls
   
   const handleAddToGarden = async () => {
     setIsAddingToGarden(true);
@@ -221,48 +310,90 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          {/* Treatment Information (for diseased plants) */}
-          {/* {!result.isHealthy && result.careRecommendations.length > 0 && 
-           result.careRecommendations[0].toLowerCase().includes('treatment') && (
-            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+          {/* AI Care Recommendations Loading State */}
+          {isLoadingAiRecommendations && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-orange-600" />
-                </div>
+                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
                 <div>
-                  <h4 className="font-semibold text-orange-800 mb-1">Recommended Treatment</h4>
-                   <p className="text-orange-700 font-medium">{result.careRecommendations[0]}</p> 
+                  <h4 className="font-semibold text-blue-800 mb-1">Getting AI-Powered Care Recommendations</h4>
+                  <p className="text-blue-700">Analyzing your plant's specific needs...</p>
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
-          {/* Care Steps */}
-          <div className="grid gap-4">
-            {result.careRecommendations
-              .slice(result.isHealthy ? 0 : 1) // Skip first item for diseased plants (treatment info)
-              .map((recommendation, index) => (
-              <div key={index} className="group">
-                <div className="flex items-start gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200">
-                  <div className="flex-shrink-0 mt-1">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 group-hover:bg-emerald-200 transition-colors">
-                      {getCareIcon(recommendation)}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-slate-700 leading-relaxed font-medium">
-                        {recommendation}
-                      </p>
-                      {/* <span className="flex-shrink-0 bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full font-medium">
-                        Step {index + 1}
-                      </span> */}
-                    </div>
-                  </div>
+          {/* AI Recommendations Error */}
+          {aiRecommendationsError && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                <div>
+                  <h4 className="font-semibold text-yellow-800 mb-1">AI Recommendations Unavailable</h4>
+                  <p className="text-yellow-700 text-sm">{aiRecommendationsError}</p>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* AI-Enhanced Care Recommendations */}
+          {aiCareRecommendations && !isLoadingAiRecommendations && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Bot className="w-5 h-5 text-purple-600" />
+                {/* <h4 className="font-semibold text-purple-800">AI-Powered Recommendations</h4> */}
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                  {aiCareRecommendations.source}
+                </span>
+              </div>
+              <div className="grid gap-3">
+                {aiCareRecommendations.care_recommendations.map((recommendation, index) => (
+                  <div key={`ai-${index}`} className="group">
+                    <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl hover:border-purple-300 hover:shadow-sm transition-all duration-200">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 group-hover:bg-purple-200 transition-colors">
+                          {getCareIcon(recommendation)}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-slate-700 leading-relaxed font-medium">
+                          {recommendation}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback to Original Care Recommendations */}
+          {(!aiCareRecommendations || aiRecommendationsError) && !isLoadingAiRecommendations && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                <h4 className="font-semibold text-emerald-800">Basic Care Recommendations</h4>
+              </div>
+              <div className="grid gap-4">
+                {result.careRecommendations.map((recommendation, index) => (
+                  <div key={`basic-${index}`} className="group">
+                    <div className="flex items-start gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all duration-200">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 group-hover:bg-emerald-200 transition-colors">
+                          {getCareIcon(recommendation)}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-slate-700 leading-relaxed font-medium">
+                          {recommendation}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Action Button */}
           <div className="mt-6 pt-4 border-t border-slate-200">

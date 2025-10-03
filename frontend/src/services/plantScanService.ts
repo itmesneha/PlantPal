@@ -17,6 +17,18 @@ export interface ScanError {
   details?: string;
 }
 
+export interface CareRecommendationsRequest {
+  species: string;
+  disease?: string;
+}
+
+export interface CareRecommendationsResponse {
+  species: string;
+  disease?: string | null;
+  care_recommendations: string[];
+  source: string;
+}
+
 class PlantScanService {
   private getAuthToken = async (): Promise<string> => {
     try {
@@ -102,6 +114,52 @@ class PlantScanService {
       }
       
       throw new Error('Failed to scan plant image. Please try again.');
+    }
+  };
+
+  /**
+   * Get AI-powered care recommendations for a plant
+   * @param request - Plant details for care recommendations
+   * @returns Promise<CareRecommendationsResponse> - Care recommendations
+   */
+  getCareRecommendations = async (request: CareRecommendationsRequest): Promise<CareRecommendationsResponse> => {
+    try {
+      console.log('🤖 Getting care recommendations for:', request);
+
+      // Get authentication token
+      const token = await this.getAuthToken();
+
+      // Make API request
+      const response = await fetch(`${API_BASE_URL}/api/v1/care-recommendations`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.detail || 
+          `Care recommendations failed with status ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const result: CareRecommendationsResponse = await response.json();
+      console.log('✅ Care recommendations received:', result);
+
+      return result;
+
+    } catch (error) {
+      console.error('❌ Care recommendations failed:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Failed to get care recommendations. Please try again.');
     }
   };
 

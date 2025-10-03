@@ -58,7 +58,12 @@ async def get_care_recommendations(
             prompt = f"Give me 4 sentences short actionable care instructions for taking care of a {plant_species}."
         
         # OpenRouter API configuration
-        openrouter_api_key = os.getenv('OPENROUTER_API_KEY', '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')
+        openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
+        if not openrouter_api_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="OpenRouter API key not configured"
+            )
         
         headers = {
             "Content-Type": "application/json",

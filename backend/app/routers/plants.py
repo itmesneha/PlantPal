@@ -134,6 +134,65 @@ def add_to_garden(
             detail="Failed to add plant to garden. Please try again."
         )
 
+@router.put("/{plant_id}", response_model=schemas.Plant)
+def update_plant(
+    plant_id: str,
+    plant_update: schemas.PlantUpdate,
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """Update plant information (currently only name)"""
+    print(f"🔄 UPDATE request for plant_id: {plant_id}")
+    print(f"🔍 User info: {user_info}")
+    print(f"📝 Update data: {plant_update}")
+    
+    # Lookup user
+    user = db.query(models.User).filter(
+        models.User.cognito_user_id == user_info["cognito_user_id"]
+    ).first()
+    
+    if not user:
+        print(f"❌ User not found for cognito_user_id: {user_info['cognito_user_id']}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Find the plant with user ownership check
+    plant = db.query(models.Plant).filter(
+        models.Plant.id == plant_id,
+        models.Plant.user_id == user.id
+    ).first()
+    
+    if not plant:
+        print(f"❌ Plant {plant_id} not found or user doesn't own it")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plant not found or you don't have permission to edit it"
+        )
+    
+    try:
+        # Update only the provided fields
+        update_data = plant_update.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(plant, field, value)
+        
+        plant.updated_at = func.now()  # Update timestamp
+        
+        db.commit()
+        db.refresh(plant)
+        
+        print(f"✅ Plant updated successfully: {plant.name}")
+        return plant
+        
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error updating plant: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update plant. Please try again."
+        )
+
 @router.delete("/{plant_id}", response_model=schemas.DeletePlantResponse)
 def delete_plant(
     plant_id: str,

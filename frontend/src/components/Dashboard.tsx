@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { Flame, Users, LogOut, Loader2, X, Camera, Calendar, MapPin, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Flame, Users, LogOut, Loader2, X, Camera, Calendar, FileText, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 import { plantsService } from '../services/plantsService';
 import { plantIconService } from '../services/plantIconService';
@@ -73,6 +73,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
   const [isDeletingPlant, setIsDeletingPlant] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingPlantName, setEditingPlantName] = useState('');
+  const [isUpdatingPlant, setIsUpdatingPlant] = useState(false);
   const [showPlantDetails, setShowPlantDetails] = useState(false);
   const [selectedPlantForDetails, setSelectedPlantForDetails] = useState<Plant | null>(null);
   const [plantHealthInfo, setPlantHealthInfo] = useState<PlantHealthInfo | null>(null);
@@ -114,6 +117,54 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     }
   };
 
+  const handleEditPlant = (plant: Plant) => {
+    setIsEditingName(true);
+    setEditingPlantName(plant.name);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedPlantForDetails || !editingPlantName.trim()) return;
+
+    if (editingPlantName.trim() === selectedPlantForDetails.name) {
+      // No changes made
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsUpdatingPlant(true);
+
+    try {
+      const updatedPlant = await gardenService.updatePlant(selectedPlantForDetails.id, {
+        name: editingPlantName.trim()
+      });
+
+      // Update the plant in the local state
+      setPlants(prevPlants =>
+        prevPlants.map(p =>
+          p.id === updatedPlant.id
+            ? { ...p, name: updatedPlant.name }
+            : p
+        )
+      );
+
+      // Update the selected plant for details
+      setSelectedPlantForDetails(prev => prev ? { ...prev, name: updatedPlant.name } : null);
+
+      setIsEditingName(false);
+      console.log('✅ Plant name updated:', updatedPlant.name);
+    } catch (error) {
+      console.error('❌ Failed to update plant name:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsUpdatingPlant(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditingPlantName('');
+  };
+
   const handleDeletePlant = (plant: Plant) => {
     setPlantToDelete(plant);
     setShowDeleteDialog(true);
@@ -152,7 +203,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const handlePlantClick = async (plant: Plant) => {
     setSelectedPlantForDetails(plant);
     setShowPlantDetails(true);
-    
+
     // Fetch health info including care notes from latest scan
     setIsLoadingHealthInfo(true);
     try {
@@ -476,28 +527,42 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 {/* Scroll container */}
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 pt-6 snap-x snap-mandatory scroll-smooth">
                   {plants.map((plant) => (
-                    <Card 
-                      key={plant.id} 
+                    <Card
+                      key={plant.id}
                       className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2 group relative cursor-pointer"
                       onClick={() => handlePlantClick(plant)}
                     >
-                      {/* Delete button - appears on hover */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePlant(plant);
-                        }}
-                        className="absolute top-2 right-2 z-10 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
-                        title={`Delete ${plant.name}`}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      {/* Action buttons - appear on hover */}
+                      <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        {/* Edit button */}
+                        {/* <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditPlant(plant);
+                          }}
+                          className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md"
+                          title={`Edit ${plant.name}`}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button> */}
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePlant(plant);
+                          }}
+                          className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"
+                          title={`Delete ${plant.name}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
                       <CardHeader className="pb-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 flex items-center justify-center">
-                              <img 
-                                src={plantIconService.getIconAsset(plant.icon || 'default')} 
+                              <img
+                                src={plantIconService.getIconAsset(plant.icon || 'default')}
                                 alt={plant.name}
                                 className="w-8 h-8 object-contain"
                               />
@@ -579,7 +644,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                     </CardContent>
                   </Card>
                 </div>
-                
+
                 {/* Scroll hint for mobile */}
                 {plants.length > 0 && (
                   <div className="text-center mt-2">
@@ -682,14 +747,56 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </button>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 flex items-center justify-center bg-white rounded-full shadow-md">
-                  <img 
-                    src={plantIconService.getIconAsset(selectedPlantForDetails.icon || 'default')} 
+                  <img
+                    src={plantIconService.getIconAsset(selectedPlantForDetails.icon || 'default')}
                     alt={selectedPlantForDetails.name}
                     className="w-12 h-12 object-contain"
                   />
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-2xl text-gray-800">{selectedPlantForDetails.name}</CardTitle>
+                  {isEditingName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingPlantName}
+                        onChange={(e) => setEditingPlantName(e.target.value)}
+                        className="text-2xl font-light bg-white border border-gray-300 rounded px-2 py-1 flex-1"
+                        disabled={isUpdatingPlant}
+                        autoFocus
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveEdit();
+                          } else if (e.key === 'Escape') {
+                            handleCancelEdit();
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={isUpdatingPlant || !editingPlantName.trim()}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:opacity-50"
+                      >
+                        {isUpdatingPlant ? '...' : '✓'}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isUpdatingPlant}
+                        className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 disabled:opacity-50"
+                      >
+                        ✗
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex">
+                      <CardTitle className="text-2xl font-light text-gray-800">{selectedPlantForDetails.name}</CardTitle>
+                      <Button
+                        onClick={() => handleEditPlant(selectedPlantForDetails)}
+                      >
+                        <Edit3 className="text-green-500" />
+                      </Button>
+
+                    </div>
+                  )}
                   {/* <CardDescription className="text-lg text-gray-600">{selectedPlantForDetails.species}</CardDescription> */}
                 </div>
               </div>
@@ -724,37 +831,34 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
 
               {/* Plant Information */}
               {/* <div className="grid grid-cols-1 gap-4"> */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Species
-                  </h4>
-                  <p className="text-blue-700">{selectedPlantForDetails.species}</p>
-                </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Species
+                </h4>
+                <p className="text-blue-700">{selectedPlantForDetails.species}</p>
+              </div>
               {/* </div> */}
 
               {/* Disease Status */}
-              <div className={`p-4 rounded-lg ${
-                isLoadingHealthInfo 
-                  ? 'bg-gray-50' 
+              <div className={`p-4 rounded-lg ${isLoadingHealthInfo
+                  ? 'bg-gray-50'
                   : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
-                    ? 'bg-red-50 border border-red-200' 
+                    ? 'bg-red-50 border border-red-200'
                     : 'bg-green-50 border border-green-200'
-              }`}>
-                <h4 className={`font-semibold mb-2 flex items-center gap-2 ${
-                  isLoadingHealthInfo 
-                    ? 'text-gray-600' 
-                    : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
-                      ? 'text-red-800' 
-                      : 'text-green-800'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    isLoadingHealthInfo 
-                      ? 'bg-gray-400' 
+                <h4 className={`font-semibold mb-2 flex items-center gap-2 ${isLoadingHealthInfo
+                    ? 'text-gray-600'
+                    : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
+                      ? 'text-red-800'
+                      : 'text-green-800'
+                  }`}>
+                  <div className={`w-2 h-2 rounded-full ${isLoadingHealthInfo
+                      ? 'bg-gray-400'
                       : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
-                        ? 'bg-red-500' 
+                        ? 'bg-red-500'
                         : 'bg-green-500'
-                  }`}></div>
+                    }`}></div>
                   Disease Status
                 </h4>
                 {isLoadingHealthInfo ? (
@@ -808,7 +912,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                     <ChevronDown className="w-4 h-4 text-purple-600" />
                   )}
                 </button>
-                
+
                 {isCareNotesExpanded && (
                   <div className="px-4 pb-4 border-t border-purple-200/50">
                     {isLoadingHealthInfo ? (
@@ -884,8 +988,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-8 h-8 flex items-center justify-center">
-                  <img 
-                    src={plantIconService.getIconAsset(plantToDelete.icon || 'default')} 
+                  <img
+                    src={plantIconService.getIconAsset(plantToDelete.icon || 'default')}
                     alt={plantToDelete.name}
                     className="w-6 h-6 object-contain"
                   />
@@ -895,7 +999,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   <p className="text-sm text-gray-600">{plantToDelete.species}</p>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 pt-2">
                 <Button
                   onClick={cancelDeletePlant}

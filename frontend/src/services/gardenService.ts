@@ -39,10 +39,15 @@ export interface DeletePlantResponse {
   deleted_plant_id: string;
 }
 
-export interface DeletePlantResponse {
+export interface UpdatePlantRequest {
+  name?: string;
+  current_health_score?: number;
+}
+
+export interface UpdatePlantResponse {
   success: boolean;
   message: string;
-  deleted_plant_id: string;
+  plant: Plant;
 }
 
 export interface Plant {
@@ -184,6 +189,51 @@ class GardenService {
       }
       
       throw new Error('Unknown error occurred while deleting plant from garden');
+    }
+  };
+
+  /**
+   * Update a plant in user's garden
+   * @param plantId - ID of the plant to update
+   * @param request - Plant update details
+   * @returns Promise<Plant> - Updated plant details
+   */
+  updatePlant = async (plantId: string, request: UpdatePlantRequest): Promise<Plant> => {
+    try {
+      console.log('🔄 Updating plant:', plantId, request);
+
+      const token = await this.getAuthToken();
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/plants/${plantId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.detail || 
+          `Failed to update plant with status ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const updatedPlant: Plant = await response.json();
+      console.log('✅ Plant updated successfully:', updatedPlant);
+
+      return updatedPlant;
+
+    } catch (error) {
+      console.error('❌ Failed to update plant:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Unknown error occurred while updating plant');
     }
   };
 

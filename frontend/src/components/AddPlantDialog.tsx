@@ -95,9 +95,7 @@ export function AddPlantDialog({ result, isOpen, onClose, onSuccess, originalIma
                 const healthyCareNotes = [
                     "Continue current care routine",
                     "Monitor regularly for any changes", 
-                    "Maintain proper watering schedule",
-                    "Ensure adequate light conditions",
-                    "Check for pests monthly"
+                    "Maintain proper watering and light conditions"
                 ];
                 careNotes = healthyCareNotes.join('; ');
                 console.log('🌱 Using generic care recommendations for healthy plant:', careNotes);
@@ -111,10 +109,13 @@ export function AddPlantDialog({ result, isOpen, onClose, onSuccess, originalIma
             const addRequest: AddToGardenRequest = {
                 plant_name: plantName.trim(),
                 species: result.species,
-                common_name: result.species, // Use species as common name for now
                 health_score: result.healthScore,
-                care_notes: careNotes, // Use determined care notes
-                plant_icon: selectedIcon, // Include the selected icon
+                plant_icon: selectedIcon,
+                
+                // Scan data
+                disease_detected: result.disease,
+                is_healthy: result.isHealthy,
+                care_notes: careNotes,
             };
 
             // Add image data if available
@@ -182,7 +183,11 @@ export function AddPlantDialog({ result, isOpen, onClose, onSuccess, originalIma
                                 <h3 className="font-semibold text-lg">{plantName || 'Unnamed Plant'}</h3>
                                 <p className="text-gray-600">{result.species}</p>
                                 <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
+                                    <span className={`text-sm px-2 py-1 rounded ${
+                                        result.healthScore < 50 
+                                            ? 'bg-red-100 text-red-700' 
+                                            : 'bg-green-100 text-green-700'
+                                    }`}>
                                         Health: {Math.round(result.healthScore)}/100
                                     </span>
                                     {!result.isHealthy && result.disease && (

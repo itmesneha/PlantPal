@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile
+from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import os
@@ -625,6 +625,7 @@ def parse_disease_predictions(hf_response: List[dict], image_data: bytes = None)
 @router.post("/scan", response_model=schemas.ScanResult)
 async def scan_plant(
     image: UploadFile = File(..., description="Plant image for disease detection"),
+    plant_id: Optional[str] = Form(None, description="Optional plant ID to associate scan with existing plant"),
     user_info: dict = Depends(get_current_user_info),
     db: Session = Depends(get_db)
 ):
@@ -633,6 +634,7 @@ async def scan_plant(
     
     try:
         print(f"🔍 User info: {user_info}")
+        print(f"🌱 Plant ID provided: {plant_id}")
         
         # Lookup user
         user = db.query(models.User).filter(
@@ -686,7 +688,7 @@ async def scan_plant(
         # Check if HF_TOKEN is available
         if not hf_token:
             # Fallback to mock result if no API token
-            return schemas.ScanResult(
+            scan_result = schemas.ScanResult(
                 species="Monstera deliciosa",
                 confidence=0.85,
                 is_healthy=True,
@@ -699,75 +701,104 @@ async def scan_plant(
                     "Fertilize monthly during growing season"
                 ]
             )
+        else:
+            # Call both APIs concurrently for better performance
+            print("🚀 Calling APIs concurrently...")
+            try:
+                plantnet_task = query_plantnet_api_async(compressed_image_data)
+                hf_task = query_huggingface_model_async(compressed_image_data)
+                
+                plantnet_response, hf_response = await asyncio.gather(
+                    plantnet_task, hf_task, return_exceptions=True
+                )
+                
+                # Handle exceptions from concurrent calls
+                if isinstance(plantnet_response, Exception):
+                    print(f"❌ PlantNet API failed: {plantnet_response}")
+                    plantnet_response = {"results": []}  # Empty fallback
+                
+                if isinstance(hf_response, Exception):
+                    print(f"❌ Hugging Face API failed: {hf_response}")
+                    # Fallback to sync call or mock data
+                    try:
+                        hf_response = query_huggingface_model(compressed_image_data)
+                    except:
+                        raise HTTPException(
+                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="All AI services are currently unavailable"
+                        )
+            
+            except Exception as e:
+                print(f"❌ Error in concurrent API calls: {str(e)}")
+                # Last resort: provide a fallback response with basic plant care advice
+                print("🛡️ Using fallback response due to API failures")
+                
+                # Try to extract plant info from filename if available
+                filename = image.filename or "unknown"
+                species_guess = "Houseplant"
+                
+                # Simple filename-based species detection
+                filename_lower = filename.lower()
+                if any(word in filename_lower for word in ['monstera', 'deliciosa']):
+                    species_guess = "Monstera deliciosa"
+                elif any(word in filename_lower for word in ['philodendron', 'philo']):
+                    species_guess = "Philodendron"
+                elif any(word in filename_lower for word in ['pothos', 'devil', 'ivy']):
+                    species_guess = "Pothos"
+                elif any(word in filename_lower for word in ['snake', 'sansevieria']):
+                    species_guess = "Snake Plant"
+                elif any(word in filename_lower for word in ['ficus', 'fiddle', 'leaf']):
+                    species_guess = "Fiddle Leaf Fig"
+                
+                # Assume plant is healthy if we can't analyze it
+                scan_result = schemas.ScanResult(
+                    species=species_guess,
+                    confidence=0.75,
+                    is_healthy=True,
+                    disease=None,
+                    health_score=85.0,
+                    care_recommendations=[
+                        "Provide bright, indirect light",
+                        "Water when top inch of soil is dry",
+                        "Maintain moderate humidity (40-60%)",
+                        "Monitor for pests and diseases regularly",
+                        "AI analysis temporarily unavailable - manual inspection recommended"
+                    ]
+                )
+            else:
+                # Parse and return result using async function
+                scan_result = await parse_disease_predictions_async(hf_response, compressed_image_data)
         
-        # Call both APIs concurrently for better performance
-        print("🚀 Calling APIs concurrently...")
-        try:
-            plantnet_task = query_plantnet_api_async(compressed_image_data)
-            hf_task = query_huggingface_model_async(compressed_image_data)
+        # 💾 SAVE TO DATABASE ONLY IF SCANNING EXISTING PLANT
+        if plant_id:
+            print("💾 Saving scan results to database for existing plant...")
             
-            plantnet_response, hf_response = await asyncio.gather(
-                plantnet_task, hf_task, return_exceptions=True
-            )
-            
-            # Handle exceptions from concurrent calls
-            if isinstance(plantnet_response, Exception):
-                print(f"❌ PlantNet API failed: {plantnet_response}")
-                plantnet_response = {"results": []}  # Empty fallback
-            
-            if isinstance(hf_response, Exception):
-                print(f"❌ Hugging Face API failed: {hf_response}")
-                # Fallback to sync call or mock data
-                try:
-                    hf_response = query_huggingface_model(compressed_image_data)
-                except:
-                    raise HTTPException(
-                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                        detail="All AI services are currently unavailable"
-                    )
+            try:
+                # Create PlantScan record only for existing plants in garden
+                plant_scan = models.PlantScan(
+                    user_id=user.id,
+                    plant_id=plant_id,
+                    health_score=scan_result.health_score,
+                    care_notes="; ".join(scan_result.care_recommendations) if scan_result.care_recommendations else None,
+                    disease_detected=scan_result.disease,
+                    is_healthy=scan_result.is_healthy
+                )
+                
+                db.add(plant_scan)
+                db.commit()
+                db.refresh(plant_scan)
+                
+                print(f"✅ PlantScan created for existing plant: {plant_scan.id}")
+                
+            except Exception as db_error:
+                print(f"❌ Database error: {db_error}")
+                db.rollback()
+                # Continue without failing the whole request - user still gets scan results
+                print("⚠️ Continuing without database storage...")
+        else:
+            print("ℹ️ Species identification scan - not saving to database (will save when added to garden)")
         
-        except Exception as e:
-            print(f"❌ Error in concurrent API calls: {str(e)}")
-            # Last resort: provide a fallback response with basic plant care advice
-            print("🛡️ Using fallback response due to API failures")
-            
-            # Try to extract plant info from filename if available
-            filename = image.filename or "unknown"
-            species_guess = "Houseplant"
-            
-            # Simple filename-based species detection
-            filename_lower = filename.lower()
-            if any(word in filename_lower for word in ['monstera', 'deliciosa']):
-                species_guess = "Monstera deliciosa"
-            elif any(word in filename_lower for word in ['philodendron', 'philo']):
-                species_guess = "Philodendron"
-            elif any(word in filename_lower for word in ['pothos', 'devil', 'ivy']):
-                species_guess = "Pothos"
-            elif any(word in filename_lower for word in ['snake', 'sansevieria']):
-                species_guess = "Snake Plant"
-            elif any(word in filename_lower for word in ['ficus', 'fiddle', 'leaf']):
-                species_guess = "Fiddle Leaf Fig"
-            
-            # Assume plant is healthy if we can't analyze it
-            return schemas.ScanResult(
-                species=species_guess,
-                confidence=0.75,
-                is_healthy=True,
-                disease=None,
-                health_score=85.0,
-                care_recommendations=[
-                    "Provide bright, indirect light",
-                    "Water when top inch of soil is dry",
-                    "Maintain moderate humidity (40-60%)",
-                    "Monitor for pests and diseases regularly",
-                    "AI analysis temporarily unavailable - manual inspection recommended"
-                ]
-            )
-        
-        # Parse and return result using async function
-        result = await parse_disease_predictions_async(hf_response, compressed_image_data)
-        
-        return result
+        return scan_result
         
     except Exception as e:
         # Log the full error for debugging
@@ -775,6 +806,12 @@ async def scan_plant(
         print(f"❌ ERROR type: {type(e).__name__}")
         import traceback
         print(f"❌ ERROR traceback: {traceback.format_exc()}")
+        
+        # Rollback any pending database changes
+        try:
+            db.rollback()
+        except:
+            pass
         
         # If this is an HTTP exception, re-raise it
         if isinstance(e, HTTPException):
@@ -819,3 +856,159 @@ async def scan_plant(
             image.file.close()
         except:
             pass
+
+
+@router.get("/latest-health/{plant_id}")
+async def get_latest_plant_health(
+    plant_id: str,
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """Get the latest health information for a specific plant"""
+    print(f"🔍 Getting latest health info for plant: {plant_id}")
+    
+    # Lookup user
+    user = db.query(models.User).filter(
+        models.User.cognito_user_id == user_info["cognito_user_id"]
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Get plant to verify ownership
+    plant = db.query(models.Plant).filter(
+        models.Plant.id == plant_id,
+        models.Plant.user_id == user.id
+    ).first()
+    
+    if not plant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plant not found or not owned by user"
+        )
+    
+    # Get latest plant scan
+    latest_scan = db.query(models.PlantScan).filter(
+        models.PlantScan.plant_id == plant_id,
+        models.PlantScan.user_id == user.id
+    ).order_by(models.PlantScan.scan_date.desc()).first()
+    
+    if not latest_scan:
+        # Return default healthy status if no scans exist yet
+        return {
+            "plant_id": plant_id,
+            "disease_detected": None,
+            "is_healthy": True,
+            "care_notes": "No scan data available yet. Perform a scan to get health information.",
+            "health_score": plant.current_health_score,
+            "scan_date": None
+        }
+    
+    print(f"✅ Found latest scan for plant {plant_id}: {latest_scan.id}")
+    
+    return {
+        "plant_id": plant_id,
+        "disease_detected": latest_scan.disease_detected,
+        "is_healthy": latest_scan.is_healthy,
+        "care_notes": latest_scan.care_notes or "No care notes available",
+        "health_score": latest_scan.health_score,
+        "scan_date": latest_scan.scan_date
+    }
+
+
+@router.get("/latest/{plant_id}", response_model=schemas.PlantScan)
+async def get_latest_plant_scan(
+    plant_id: str,
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """Get the latest scan data for a specific plant"""
+    print(f"🔍 Getting latest scan for plant: {plant_id}")
+    
+    # Lookup user
+    user = db.query(models.User).filter(
+        models.User.cognito_user_id == user_info["cognito_user_id"]
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Get plant to verify ownership
+    plant = db.query(models.Plant).filter(
+        models.Plant.id == plant_id,
+        models.Plant.user_id == user.id
+    ).first()
+    
+    if not plant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plant not found or not owned by user"
+        )
+    
+    # Get latest plant scan
+    latest_scan = db.query(models.PlantScan).filter(
+        models.PlantScan.plant_id == plant_id,
+        models.PlantScan.user_id == user.id
+    ).order_by(models.PlantScan.scan_date.desc()).first()
+    
+    if not latest_scan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No scans found for this plant"
+        )
+    
+    print(f"✅ Found latest scan for plant {plant_id}: {latest_scan.id}")
+    
+    return latest_scan
+
+
+@router.get("/history/{plant_id}", response_model=List[schemas.PlantScan])
+async def get_plant_scan_history(
+    plant_id: str,
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """Get scan history for a specific plant"""
+    print(f"🔍 Getting scan history for plant: {plant_id}")
+    
+    # Lookup user
+    user = db.query(models.User).filter(
+        models.User.cognito_user_id == user_info["cognito_user_id"]
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Get plant to verify ownership
+    plant = db.query(models.Plant).filter(
+        models.Plant.id == plant_id,
+        models.Plant.user_id == user.id
+    ).first()
+    
+    if not plant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plant not found or not owned by user"
+        )
+    
+    # Get plant scans for this plant
+    plant_scans = db.query(models.PlantScan).filter(
+        models.PlantScan.plant_id == plant_id,
+        models.PlantScan.user_id == user.id
+    ).order_by(models.PlantScan.scan_date.desc()).limit(10).all()
+    
+    print(f"✅ Found {len(plant_scans)} plant scans for plant {plant_id}")
+    
+    return plant_scans
+
+
+# Old health-reports endpoint removed - functionality merged into PlantScan

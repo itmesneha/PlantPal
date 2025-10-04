@@ -58,7 +58,6 @@ def get_dashboard(
             health_score=plant.current_health_score,
             streak_days=plant.streak_days,
             last_check_in=plant.last_check_in,
-            image_url=plant.image_url,
             needs_attention=plant.current_health_score < 70
         )
         for plant in plants[:5]

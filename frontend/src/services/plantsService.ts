@@ -8,12 +8,10 @@ export interface Plant {
   name: string;
   species: string;
   common_name?: string;
-  location?: string;
   care_notes?: string;
   current_health_score: number;
   streak_days: number;
   last_check_in: string;
-  image_url?: string;
   plant_icon?: string;
   created_at: string;
   updated_at?: string;
@@ -99,6 +97,8 @@ class PlantsService {
     lastCheckIn: string;
     image?: string;
     icon?: string;
+    careNotes?: string;
+    commonName?: string;
   } {
     return {
       id: plant.id,
@@ -107,8 +107,9 @@ class PlantsService {
       healthScore: plant.current_health_score,
       streak: plant.streak_days,
       lastCheckIn: new Date(plant.last_check_in).toLocaleDateString(),
-      image: plant.image_url || undefined,
       icon: plant.plant_icon || '🌱',
+      careNotes: plant.care_notes || undefined,
+      commonName: plant.common_name || undefined,
     };
   }
 
@@ -124,6 +125,8 @@ class PlantsService {
     lastCheckIn: string;
     image?: string;
     icon?: string;
+    careNotes?: string;
+    commonName?: string;
   }[]> {
     const plants = await this.getUserPlants(params);
     return plants.map(plant => this.transformPlantForDashboard(plant));

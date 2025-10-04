@@ -82,7 +82,7 @@ def add_to_garden(
     
     try:
         # Handle image upload to S3 if provided
-        image_url = None
+        # image_url = None
         # if request.image_data:
         #     image_url = upload_plant_image(request.image_data, user.id)
         
@@ -91,19 +91,31 @@ def add_to_garden(
             user_id=user.id,
             name=request.plant_name,
             species=request.species,
-            common_name=request.common_name,
-            location=request.location,
-            care_notes=request.care_notes,
             current_health_score=request.health_score or 100.0,
             plant_icon=request.plant_icon or "🌱",  # Default to seedling emoji
             streak_days=1,  # Start with day 1
-            last_check_in=func.now(),
-            image_url=image_url,
-            created_at=func.now(),
-            updated_at=func.now()
+            last_check_in=func.now()
         )
         
         db.add(db_plant)
+        db.flush()  # Get the plant ID without committing yet
+        
+        # Create initial PlantScan record if scan data is provided
+        if request.care_notes or request.disease_detected is not None:
+            print(f"📊 Creating initial scan record for new plant")
+            
+            plant_scan = models.PlantScan(
+                user_id=user.id,
+                plant_id=db_plant.id,
+                health_score=request.health_score or 100.0,
+                care_notes=request.care_notes,
+                disease_detected=request.disease_detected,
+                is_healthy=request.is_healthy if request.is_healthy is not None else True
+            )
+            
+            db.add(plant_scan)
+            print(f"✅ Initial scan record created for plant: {db_plant.id}")
+        
         db.commit()
         db.refresh(db_plant)
         
@@ -191,23 +203,15 @@ def delete_plant(
         
         # First, handle related records to avoid foreign key constraint issues
         
-        # 1. Delete related health reports
-        health_reports = db.query(models.HealthReport).filter(
-            models.HealthReport.plant_id == plant_id_to_delete
+        # 1. Delete related plant scans
+        plant_scans = db.query(models.PlantScan).filter(
+            models.PlantScan.plant_id == plant_id_to_delete
         ).all()
-        for report in health_reports:
-            db.delete(report)
-        print(f"🗑️ Deleted {len(health_reports)} health reports")
+        for scan in plant_scans:
+            db.delete(scan)
+        print(f"🗑️ Deleted {len(plant_scans)} plant scans")
         
-        # 2. Set plant_id to NULL in scan_sessions (since it's nullable)
-        scan_sessions = db.query(models.ScanSession).filter(
-            models.ScanSession.plant_id == plant_id_to_delete
-        ).all()
-        for session in scan_sessions:
-            session.plant_id = None
-        print(f"🗑️ Nullified plant_id in {len(scan_sessions)} scan sessions")
-        
-        # 3. Now delete the plant
+        # 2. Now delete the plant
         db.delete(plant)
         print(f"🗑️ Plant marked for deletion in session")
         

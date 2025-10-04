@@ -6,12 +6,16 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 export interface AddToGardenRequest {
   plant_name: string;
   species: string;
-  common_name?: string;
-  location?: string;
-  care_notes?: string;
   health_score?: number;
+  plant_icon?: string;
+  
+  // Scan data (from scan results)
+  disease_detected?: string;
+  is_healthy?: boolean;
+  care_notes?: string;
+  
+  // Legacy fields (keep for compatibility)
   image_data?: string; // Base64 encoded image
-  plant_icon?: string; // User-selected emoji icon
 }
 
 export interface AddToGardenResponse {
@@ -46,12 +50,10 @@ export interface Plant {
   name: string;
   species: string;
   common_name?: string;
-  location?: string;
   care_notes?: string;
   current_health_score: number;
   streak_days: number;
   last_check_in?: string;
-  image_url?: string;
   plant_icon?: string;
   created_at: string;
   updated_at?: string;

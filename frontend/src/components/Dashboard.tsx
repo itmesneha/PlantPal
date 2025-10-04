@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { Flame, Users, LogOut, Loader2, X } from 'lucide-react';
+import { Flame, Users, LogOut, Loader2, X, Camera, Calendar, MapPin, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 import { plantsService } from '../services/plantsService';
 import { plantIconService } from '../services/plantIconService';
 import { gardenService } from '../services/gardenService';
+import { scanService } from '../services/scanService';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
 import plantUserIcon from '../assets/plant_user.png';
@@ -29,6 +30,7 @@ interface Plant {
   lastCheckIn: string;
   image?: string;
   icon?: string;
+  commonName?: string;
 }
 
 interface Achievement {
@@ -50,6 +52,13 @@ interface User {
   updated_at?: string;
 }
 
+interface PlantHealthInfo {
+  lastDisease: string | null;
+  lastCareNotes: string[] | null;
+  lastScanDate: string | null;
+  isHealthy: boolean;
+}
+
 interface DashboardProps {
   user: User;
   onScanPlant: () => void;
@@ -64,6 +73,11 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
   const [isDeletingPlant, setIsDeletingPlant] = useState(false);
+  const [showPlantDetails, setShowPlantDetails] = useState(false);
+  const [selectedPlantForDetails, setSelectedPlantForDetails] = useState<Plant | null>(null);
+  const [plantHealthInfo, setPlantHealthInfo] = useState<PlantHealthInfo | null>(null);
+  const [isLoadingHealthInfo, setIsLoadingHealthInfo] = useState(false);
+  const [isCareNotesExpanded, setIsCareNotesExpanded] = useState(false);
 
   // Fetch user plants on component mount
   useEffect(() => {
@@ -133,6 +147,51 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const cancelDeletePlant = () => {
     setShowDeleteDialog(false);
     setPlantToDelete(null);
+  };
+
+  const handlePlantClick = async (plant: Plant) => {
+    setSelectedPlantForDetails(plant);
+    setShowPlantDetails(true);
+    
+    // Fetch health info including care notes from latest scan
+    setIsLoadingHealthInfo(true);
+    try {
+      console.log('🔍 Fetching latest health info for plant:', plant.id);
+      const healthInfo = await scanService.getLatestPlantHealthInfo(plant.id);
+      setPlantHealthInfo(healthInfo);
+      console.log('✅ Health info loaded:', healthInfo);
+    } catch (error) {
+      console.error('❌ Failed to fetch plant health info:', error);
+      // Set default values if fetch fails
+      setPlantHealthInfo({
+        lastDisease: null,
+        lastCareNotes: null,
+        lastScanDate: null,
+        isHealthy: true
+      });
+    } finally {
+      setIsLoadingHealthInfo(false);
+    }
+  };
+
+  const closePlantDetails = () => {
+    setShowPlantDetails(false);
+    setSelectedPlantForDetails(null);
+    setPlantHealthInfo(null);
+    setIsLoadingHealthInfo(false);
+    setIsCareNotesExpanded(false);
+  };
+
+  const handleDeleteFromDetails = (plant: Plant) => {
+    setPlantToDelete(plant);
+    setShowDeleteDialog(true);
+    setShowPlantDetails(false); // Close details modal
+  };
+
+  const handleScanFromDetails = (plant: Plant) => {
+    // Close the details modal and trigger scan
+    setShowPlantDetails(false);
+    onScanPlant(); // This will navigate to scan page
   };
 
   // Mock data for achievements and leaderboard (these would also come from backend eventually)
@@ -417,7 +476,11 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 {/* Scroll container */}
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 pt-6 snap-x snap-mandatory scroll-smooth">
                   {plants.map((plant) => (
-                    <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2 group relative">
+                    <Card 
+                      key={plant.id} 
+                      className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2 group relative cursor-pointer"
+                      onClick={() => handlePlantClick(plant)}
+                    >
                       {/* Delete button - appears on hover */}
                       <button
                         onClick={(e) => {
@@ -604,6 +667,205 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Plant Details Modal */}
+      {showPlantDetails && selectedPlantForDetails && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b relative">
+              <button
+                onClick={closePlantDetails}
+                className="absolute right-4 top-4 p-2 rounded-full hover:bg-white/50 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 flex items-center justify-center bg-white rounded-full shadow-md">
+                  <img 
+                    src={plantIconService.getIconAsset(selectedPlantForDetails.icon || 'default')} 
+                    alt={selectedPlantForDetails.name}
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-2xl text-gray-800">{selectedPlantForDetails.name}</CardTitle>
+                  {/* <CardDescription className="text-lg text-gray-600">{selectedPlantForDetails.species}</CardDescription> */}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Health Score Section */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Plant Health
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Health Score</span>
+                    <span className={selectedPlantForDetails.healthScore >= 80 ? 'text-green-600' : selectedPlantForDetails.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                      {Math.round(selectedPlantForDetails.healthScore)}%
+                    </span>
+                  </div>
+                  <Progress value={selectedPlantForDetails.healthScore} className="h-3" />
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-orange-600">
+                      <Flame className="w-4 h-4" />
+                      <span className="font-medium">{selectedPlantForDetails.streak} day streak</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      <span>Last check: {selectedPlantForDetails.lastCheckIn}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plant Information */}
+              {/* <div className="grid grid-cols-1 gap-4"> */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Species
+                  </h4>
+                  <p className="text-blue-700">{selectedPlantForDetails.species}</p>
+                </div>
+              {/* </div> */}
+
+              {/* Disease Status */}
+              <div className={`p-4 rounded-lg ${
+                isLoadingHealthInfo 
+                  ? 'bg-gray-50' 
+                  : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
+                    ? 'bg-red-50 border border-red-200' 
+                    : 'bg-green-50 border border-green-200'
+              }`}>
+                <h4 className={`font-semibold mb-2 flex items-center gap-2 ${
+                  isLoadingHealthInfo 
+                    ? 'text-gray-600' 
+                    : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
+                      ? 'text-red-800' 
+                      : 'text-green-800'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    isLoadingHealthInfo 
+                      ? 'bg-gray-400' 
+                      : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
+                        ? 'bg-red-500' 
+                        : 'bg-green-500'
+                  }`}></div>
+                  Disease Status
+                </h4>
+                {isLoadingHealthInfo ? (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Loading health information...</span>
+                  </div>
+                ) : plantHealthInfo?.lastDisease ? (
+                  <div className="space-y-2">
+                    <p className="text-red-700 font-medium">
+                      Last detected: {plantHealthInfo.lastDisease}
+                    </p>
+                    {plantHealthInfo.lastScanDate && (
+                      <p className="text-red-600 text-xs">
+                        Scanned: {new Date(plantHealthInfo.lastScanDate).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-green-700 font-medium">Plant appears healthy!</p>
+                    {plantHealthInfo?.lastScanDate ? (
+                      <p className="text-green-600 text-xs">
+                        Last scan: {new Date(plantHealthInfo.lastScanDate).toLocaleDateString()}
+                      </p>
+                    ) : (
+                      <p className="text-gray-500 text-xs">No scans performed yet</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Care Notes - Collapsible */}
+              <div className="bg-purple-50 rounded-lg border border-purple-200">
+                <button
+                  onClick={() => setIsCareNotesExpanded(!isCareNotesExpanded)}
+                  className="w-full p-4 flex items-center justify-between hover:bg-purple-100 transition-colors rounded-lg"
+                >
+                  <h4 className="font-semibold text-purple-800 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Care Notes
+                    {!isLoadingHealthInfo && plantHealthInfo?.lastCareNotes && plantHealthInfo.lastCareNotes.length > 0 && (
+                      <Badge className="bg-purple-100 text-purple-700 border-purple-300 text-xs">
+                        {plantHealthInfo.lastCareNotes.length}
+                      </Badge>
+                    )}
+                  </h4>
+                  {isCareNotesExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-purple-600" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-purple-600" />
+                  )}
+                </button>
+                
+                {isCareNotesExpanded && (
+                  <div className="px-4 pb-4 border-t border-purple-200/50">
+                    {isLoadingHealthInfo ? (
+                      <div className="flex items-center gap-2 text-gray-500 pt-3">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">Loading care recommendations...</span>
+                      </div>
+                    ) : plantHealthInfo?.lastCareNotes && plantHealthInfo.lastCareNotes.length > 0 ? (
+                      <div className="space-y-3 pt-3">
+                        <p className="text-purple-700 text-sm font-medium">Latest AI recommendations:</p>
+                        <ul className="space-y-2">
+                          {plantHealthInfo.lastCareNotes.map((note, index) => (
+                            <li key={index} className="text-purple-600 text-sm flex items-start gap-2 p-2 bg-white rounded border border-purple-100">
+                              <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
+                              <span className="leading-relaxed">{note}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {plantHealthInfo.lastScanDate && (
+                          <p className="text-purple-500 text-xs mt-3 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            From scan on {new Date(plantHealthInfo.lastScanDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="pt-3">
+                        <p className="text-purple-600 text-sm italic">
+                          No care notes available. Scan your plant to get AI-powered care recommendations!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={() => handleScanFromDetails(selectedPlantForDetails)}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Scan New Photo
+                </Button>
+                <Button
+                  onClick={() => handleDeleteFromDetails(selectedPlantForDetails)}
+                  variant="outline"
+                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Delete Plant
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Delete Confirmation Dialog */}

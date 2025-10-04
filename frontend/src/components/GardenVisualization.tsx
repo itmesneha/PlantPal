@@ -1,8 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Button } from './ui/button';
 import { plantIconService } from '../services/plantIconService';
+import plantScanIcon from '../assets/plant_scan_icon.png';
 import myGardenIcon from '../assets/my_garden.png';
+import plant1Icon from '../assets/plant-icons/plant1.png';
 
 interface Plant {
   id: string;
@@ -35,25 +38,39 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
           <h3 className="text-2xl font-bold text-gray-800">My Garden</h3>
         </CardTitle>
         <CardDescription>
-          Visual overview of your plant collection
+          Overview of your plant collection
         </CardDescription>
       </CardHeader>
       <CardContent>
         {plants.length === 0 ? (
           <div className="flex items-center justify-center min-h-[200px]">
             <div className="text-center space-y-4">
-              <div className="text-6xl">🌱</div>
+              <div className="text-6xl"> <img
+              src={plant1Icon}
+              width={32}
+              height={32}
+              alt="icon"
+              className="inline-block"
+            /> </div>
               <div>
                 <h3 className="text-lg mb-2">Your garden is empty</h3>
                 <p className="text-muted-foreground mb-4">
                   Start by scanning your first plant to create your digital garden
                 </p>
-                <button
+                 <Button
+                      onClick={onScanPlant}
+                      variant="outline"
+                      size="lg"
+                      className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
+                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> 
+                      {plants.length === 0 ? 'Scan Your First Plant' : 'Scan New Plant'}
+                    </Button>
+                {/* <button
                   onClick={onScanPlant}
                   className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
                   Scan Your First Plant
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

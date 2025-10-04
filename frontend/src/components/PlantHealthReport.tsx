@@ -120,52 +120,6 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
     };
   }, [result.species, result.disease, result.isHealthy]); // Removed confidence from deps to prevent too many calls
 
-  const handleAddToGarden = async (plantName: string, selectedIcon: string) => {
-    setIsAddingToGarden(true);
-    setAddToGardenStatus('idle');
-    setErrorMessage('');
-
-    try {
-      // Prepare the request data
-      const addRequest: AddToGardenRequest = {
-        plant_name: plantName,
-        species: result.species,
-        common_name: result.species, // Use species as common name for now
-        health_score: result.healthScore,
-        care_notes: result.careRecommendations.join('; '), // Join recommendations as notes
-        plant_icon: selectedIcon, // Include the selected icon
-      };
-
-      // Add image data if available
-      if (originalImage) {
-        try {
-          const base64Image = await gardenService.convertImageToBase64(originalImage);
-          addRequest.image_data = base64Image;
-        } catch (imageError) {
-          console.warn('Failed to convert image, proceeding without image:', imageError);
-        }
-      }
-
-      // Call the API
-      const response = await gardenService.addToGarden(addRequest);
-
-      console.log('🌱 Plant added to garden:', response);
-      setAddToGardenStatus('success');
-
-      // Call the parent callback if provided
-      if (onAddToGarden) {
-        onAddToGarden(response.plant_id, response.plant.name);
-      }
-
-    } catch (error) {
-      console.error('❌ Failed to add plant to garden:', error);
-      setAddToGardenStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to add plant to garden');
-    } finally {
-      setIsAddingToGarden(false);
-    }
-  };
-
   const handleOpenAddDialog = () => {
     setShowAddPlantDialog(true);
   };
@@ -432,10 +386,10 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
               onClick={handleOpenAddDialog}
               disabled={isAddingToGarden || addToGardenStatus === 'success'}
               className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${addToGardenStatus === 'success'
-                  ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
-                  : isAddingToGarden
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+                ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
+                : isAddingToGarden
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -452,12 +406,12 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
                 ) : (
                   <>
                     <img
-              src={plant1Icon}
-              width={32}
-              height={32}
-              alt="icon"
-              className="inline-block"
-            /> Add to My Garden
+                      src={plant1Icon}
+                      width={32}
+                      height={32}
+                      alt="icon"
+                      className="inline-block"
+                    /> Add to My Garden
                   </>
                 )}
               </div>
@@ -471,7 +425,13 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
         result={result}
         isOpen={showAddPlantDialog}
         onClose={() => setShowAddPlantDialog(false)}
-        onAddToGarden={handleAddToGarden}
+        onSuccess={(plantId, plantName) => {
+          setAddToGardenStatus('success');
+          setShowAddPlantDialog(false);
+          if (onAddToGarden) {
+            onAddToGarden(plantId, plantName);
+          }
+        }}
         originalImage={originalImage}
       />
     </div>

@@ -6,6 +6,7 @@ import { Progress } from './ui/progress';
 import { Flame, Users, LogOut, Loader2 } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 import { plantsService } from '../services/plantsService';
+import { plantIconService } from '../services/plantIconService';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
 import plantUserIcon from '../assets/plant_user.png';
@@ -16,6 +17,7 @@ import myPlantsIcon from '../assets/my_plants.png';
 import starIcon from '../assets/star.png';
 import leaderboardIcon from '../assets/leaderboard.png';
 import myPlantCollectionIcon from '../assets/plant_collection.png';
+import plant1Icon from '../assets/plant-icons/plant1.png';
 
 interface Plant {
   id: string;
@@ -65,12 +67,12 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       try {
         setIsLoadingPlants(true);
         setPlantsError('');
-        
+
         console.log('🌱 Fetching user plants for dashboard...');
         const userPlants = await plantsService.getUserPlantsForDashboard();
         setPlants(userPlants);
         console.log('✅ User plants loaded:', userPlants);
-        
+
       } catch (error) {
         console.error('❌ Failed to fetch user plants:', error);
         setPlantsError(error instanceof Error ? error.message : 'Failed to load plants');
@@ -142,8 +144,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     { rank: 5, name: 'Mike Garden', score: 1432, plants: 5 }
   ];
 
-  const totalHealthScore = plants.length > 0 
-    ? plants.reduce((sum, plant) => sum + plant.healthScore, 0) / plants.length 
+  const totalHealthScore = plants.length > 0
+    ? plants.reduce((sum, plant) => sum + plant.healthScore, 0) / plants.length
     : 0;
   const earnedAchievements = achievements.filter(a => a.earned).length;
   const bestStreak = plants.length > 0 ? Math.max(...plants.map(p => p.streak)) : 0;
@@ -360,7 +362,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             {plantsError && !isLoadingPlants && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
                 <p className="text-red-700 mb-4">❌ {plantsError}</p>
-                <Button 
+                <Button
                   onClick={refreshPlants}
                   variant="outline"
                   className="border-red-300 text-red-600 hover:bg-red-50"
@@ -378,7 +380,13 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{plant.icon || '🌱'}</span>
+                          <div className="w-10 h-10 flex items-center justify-center">
+                            <img 
+                              src={plantIconService.getIconAsset(plant.icon || 'default')} 
+                              alt={plant.name}
+                              className="w-8 h-8 object-contain"
+                            />
+                          </div>
                           <div>
                             <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
                             <CardDescription className="text-gray-600 font-medium">{plant.species}</CardDescription>
@@ -426,15 +434,21 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 <Card className="border-2 border-dashed border-green-300 card-hover">
                   <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
-                      <span className="text-3xl">🌱</span>
+                      <span className="text-3xl"><img
+                        src={plant1Icon}
+                        width={32}
+                        height={32}
+                        alt="icon"
+                        className="inline-block"
+                      /> </span>
                     </div>
                     <div className="text-center space-y-2">
                       <p className="text-lg font-medium text-gray-700">
                         {plants.length === 0 ? 'Start Your Garden' : 'Add More Plants'}
                       </p>
                       <p className="text-gray-500">
-                        {plants.length === 0 
-                          ? 'Scan your first plant to begin your digital garden' 
+                        {plants.length === 0
+                          ? 'Scan your first plant to begin your digital garden'
                           : 'Scan a new plant to expand your garden'
                         }
                       </p>
@@ -444,7 +458,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       variant="outline"
                       size="lg"
                       className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
-                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> 
+                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" />
                       {plants.length === 0 ? 'Scan Your First Plant' : 'Scan New Plant'}
                     </Button>
                   </CardContent>

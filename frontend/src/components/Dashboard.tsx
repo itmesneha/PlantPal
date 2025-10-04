@@ -372,97 +372,107 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </div>
             )}
 
-            {/* Plants Grid */}
+            {/* Plants Carousel */}
             {!isLoadingPlants && !plantsError && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plants.map((plant) => (
-                  <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 flex items-center justify-center">
-                            <img 
-                              src={plantIconService.getIconAsset(plant.icon || 'default')} 
-                              alt={plant.name}
-                              className="w-8 h-8 object-contain"
-                            />
+              <div className="relative">
+                {/* Scroll container */}
+                <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 pt-6 snap-x snap-mandatory scroll-smooth">
+                  {plants.map((plant) => (
+                    <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 flex items-center justify-center">
+                              <img 
+                                src={plantIconService.getIconAsset(plant.icon || 'default')} 
+                                alt={plant.name}
+                                className="w-8 h-8 object-contain"
+                              />
+                            </div>
+                            <div>
+                              <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
+                              <CardDescription className="text-gray-600 font-medium">{plant.species}</CardDescription>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
-                            <CardDescription className="text-gray-600 font-medium">{plant.species}</CardDescription>
-                          </div>
+                          <Badge
+                            className={`px-3 py-1 text-sm font-medium ${plant.healthScore >= 80
+                              ? 'bg-green-100 text-green-800 border-green-200'
+                              : plant.healthScore >= 60
+                                ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                : 'bg-red-100 text-red-800 border-red-200'
+                              }`}
+                          >
+                            {Math.round(plant.healthScore)}/100
+                          </Badge>
                         </div>
-                        <Badge
-                          className={`px-3 py-1 text-sm font-medium ${plant.healthScore >= 80
-                            ? 'bg-green-100 text-green-800 border-green-200'
-                            : plant.healthScore >= 60
-                              ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                              : 'bg-red-100 text-red-800 border-red-200'
-                            }`}
-                        >
-                          {Math.round(plant.healthScore)}/100
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm font-medium">
-                          <span>Health Score</span>
-                          <span className={plant.healthScore >= 80 ? 'text-green-600' : plant.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
-                            {Math.round(plant.healthScore)}%
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm font-medium">
+                            <span>Health Score</span>
+                            <span className={plant.healthScore >= 80 ? 'text-green-600' : plant.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                              {Math.round(plant.healthScore)}%
+                            </span>
+                          </div>
+                          <Progress
+                            value={plant.healthScore}
+                            className="h-3"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="flex items-center gap-2 text-orange-600 font-medium">
+                            <Flame className="w-4 h-4" />
+                            {plant.streak} day streak
+                          </span>
+                          <span className="text-gray-500">
+                            {plant.lastCheckIn}
                           </span>
                         </div>
-                        <Progress
-                          value={plant.healthScore}
-                          className="h-3"
-                        />
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {/* Add Plant Card - Always at the end */}
+                  <Card className="border-2 border-dashed border-green-300 card-hover flex-shrink-0 w-80 snap-start mt-2">
+                    <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
+                      <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-3xl"><img
+                          src={plant1Icon}
+                          width={32}
+                          height={32}
+                          alt="icon"
+                          className="inline-block"
+                        /> </span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-2 text-orange-600 font-medium">
-                          <Flame className="w-4 h-4" />
-                          {plant.streak} day streak
-                        </span>
-                        <span className="text-gray-500">
-                          {plant.lastCheckIn}
-                        </span>
+                      <div className="text-center space-y-2">
+                        <p className="text-lg font-medium text-gray-700">
+                          {plants.length === 0 ? 'Start Your Garden' : 'Add More Plants'}
+                        </p>
+                        <p className="text-gray-500">
+                          {plants.length === 0
+                            ? 'Scan your first plant to begin your digital garden'
+                            : 'Scan a new plant to expand your garden'
+                          }
+                        </p>
                       </div>
+                      <Button
+                        onClick={onScanPlant}
+                        variant="outline"
+                        size="lg"
+                        className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
+                        <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" />
+                        {plants.length === 0 ? 'Scan Your First Plant' : 'Scan New Plant'}
+                      </Button>
                     </CardContent>
                   </Card>
-                ))}
-
-                {/* Add Plant Card - Only show if we have plants or no error */}
-                <Card className="border-2 border-dashed border-green-300 card-hover">
-                  <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
-                      <span className="text-3xl"><img
-                        src={plant1Icon}
-                        width={32}
-                        height={32}
-                        alt="icon"
-                        className="inline-block"
-                      /> </span>
-                    </div>
-                    <div className="text-center space-y-2">
-                      <p className="text-lg font-medium text-gray-700">
-                        {plants.length === 0 ? 'Start Your Garden' : 'Add More Plants'}
-                      </p>
-                      <p className="text-gray-500">
-                        {plants.length === 0
-                          ? 'Scan your first plant to begin your digital garden'
-                          : 'Scan a new plant to expand your garden'
-                        }
-                      </p>
-                    </div>
-                    <Button
-                      onClick={onScanPlant}
-                      variant="outline"
-                      size="lg"
-                      className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
-                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" />
-                      {plants.length === 0 ? 'Scan Your First Plant' : 'Scan New Plant'}
-                    </Button>
-                  </CardContent>
-                </Card>
+                </div>
+                
+                {/* Scroll hint for mobile */}
+                {plants.length > 0 && (
+                  <div className="text-center mt-2">
+                    <p className="text-sm text-gray-400">← Scroll horizontally to see all plants →</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

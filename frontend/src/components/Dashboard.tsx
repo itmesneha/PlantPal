@@ -61,7 +61,7 @@ interface PlantHealthInfo {
 
 interface DashboardProps {
   user: User;
-  onScanPlant: () => void;
+  onScanPlant: (plantId?: string) => void;
   onSignOut: () => void;
 }
 
@@ -189,9 +189,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   };
 
   const handleScanFromDetails = (plant: Plant) => {
-    // Close the details modal and trigger scan
+    // Close the details modal and trigger scan with plant ID for rescanning
     setShowPlantDetails(false);
-    onScanPlant(); // This will navigate to scan page
+    onScanPlant(plant.id); // Pass plant ID to rescan existing plant
   };
 
   // Mock data for achievements and leaderboard (these would also come from backend eventually)
@@ -271,7 +271,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
-            onClick={onScanPlant}
+            onClick={() => onScanPlant()}
             variant="outline"
             size="lg"
             className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
@@ -569,7 +569,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                         </p>
                       </div>
                       <Button
-                        onClick={onScanPlant}
+                        onClick={() => onScanPlant()}
                         variant="outline"
                         size="lg"
                         className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">

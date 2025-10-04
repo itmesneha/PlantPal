@@ -16,9 +16,10 @@ interface PlantScanResult {
 
 interface PlantScannerProps {
   onScanComplete: (result: PlantScanResult, originalFile: File) => void;
+  plantId?: string; // Optional plant ID for rescanning existing plants
 }
 
-export function PlantScanner({ onScanComplete }: PlantScannerProps) {
+export function PlantScanner({ onScanComplete, plantId }: PlantScannerProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -58,8 +59,8 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
     try {
       console.log('🚀 Starting plant scan...');
       
-      // Call the real API
-      const result: ScanResult = await plantScanService.scanPlantImage(selectedFile);
+      // Call the real API with optional plant ID for rescanning
+      const result: ScanResult = await plantScanService.scanPlantImage(selectedFile, plantId);
       
       // Transform API response to match component interface
       const transformedResult: PlantScanResult = {
@@ -87,10 +88,13 @@ export function PlantScanner({ onScanComplete }: PlantScannerProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="w-5 h-5" />
-          Plant Scanner
+          {plantId ? 'Rescan Plant' : 'Plant Scanner'}
         </CardTitle>
         <CardDescription>
-          Upload a photo to identify your plant and check its health
+          {plantId 
+            ? 'Upload a new photo to update your plant\'s health data' 
+            : 'Upload a photo to identify your plant and check its health'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

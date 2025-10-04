@@ -55,9 +55,10 @@ class PlantScanService {
   /**
    * Scan a plant image for disease detection
    * @param imageFile - The image file to analyze
+   * @param plantId - Optional plant ID for rescanning existing plants
    * @returns Promise<ScanResult> - Analysis results
    */
-  scanPlantImage = async (imageFile: File): Promise<ScanResult> => {
+  scanPlantImage = async (imageFile: File, plantId?: string): Promise<ScanResult> => {
     try {
       // Validate file type
       if (!imageFile.type.startsWith('image/')) {
@@ -82,6 +83,11 @@ class PlantScanService {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('image', imageFile);
+      
+      // Add plant ID if provided (for rescanning existing plants)
+      if (plantId) {
+        formData.append('plant_id', plantId);
+      }
 
       // Make API request
       const response = await fetch(`${API_BASE_URL}/api/v1/scan`, {

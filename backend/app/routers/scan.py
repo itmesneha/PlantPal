@@ -454,6 +454,123 @@ def query_huggingface_model(image_data: bytes, max_retries: int = 2) -> dict:
                     detail=f"Error calling Hugging Face API: {str(e)}"
                 )
 
+async def parse_disease_predictions_for_rescan_async(hf_response: List[dict], image_data: bytes, known_species: str) -> schemas.ScanResult:
+    """Parse Hugging Face response for rescan (skip species detection, use known species)"""
+    if not hf_response or not isinstance(hf_response, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invalid response from disease detection model"
+        )
+    
+    # Use the known species instead of detecting it
+    species = known_species
+    print(f"🔄 Using known species for rescan: {species}")
+    
+    # Find the highest-scoring disease prediction
+    best_prediction = max(hf_response, key=lambda x: x.get('score', 0))
+    
+    # Extract disease information
+    label = best_prediction.get('label', '').lower()
+    confidence = best_prediction.get('score', 0.0)
+    
+    print(f"🔍 Disease analysis - Label: {label}, Confidence: {confidence:.3f}")
+    
+    # Determine if plant is healthy and extract disease
+    is_healthy = True
+    disease = None
+    health_score = 85.0  # Default healthy score
+    
+    if 'healthy' not in label and confidence > 0.3:  # Lower threshold for disease detection
+        is_healthy = False
+        
+        # Parse disease name from label - extract only the disease part
+        formatted_label = label.replace('_', ' ').title()
+        
+        # For rescans, we want just the disease name, not the full "Plant With Disease" format
+        if ' With ' in formatted_label:
+            # Extract disease after "With" (e.g., "Bell Pepper With Bacterial Spot" -> "Bacterial Spot")
+            disease = formatted_label.split(' With ', 1)[1]
+        elif ' ' in formatted_label and any(word in formatted_label.lower() for word in ['spot', 'rot', 'blight', 'mold', 'wilt', 'burn', 'rust', 'scab']):
+            # Handle cases where disease is in the label but not in "With" format
+            # Try to extract disease-specific terms
+            words = formatted_label.split()
+            disease_words = []
+            found_disease_term = False
+            
+            for word in words:
+                if word.lower() in ['spot', 'rot', 'blight', 'mold', 'wilt', 'burn', 'rust', 'scab', 'bacterial', 'fungal', 'viral']:
+                    found_disease_term = True
+                    disease_words.append(word)
+                elif found_disease_term:
+                    disease_words.append(word)
+                elif word.lower() in ['bacterial', 'fungal', 'viral', 'early', 'late', 'common', 'southern']:
+                    disease_words.append(word)
+            
+            if disease_words:
+                disease = ' '.join(disease_words)
+            else:
+                disease = formatted_label  # Fallback to full label
+        else:
+            disease = formatted_label
+            
+        # Scale health score based on confidence (inverse relationship)
+        health_score = max(30.0, 85.0 - (confidence * 55.0))
+    else:
+        # Plant appears healthy
+        health_score = min(95.0, 70.0 + (confidence * 25.0))
+    
+    print(f"🏥 Health assessment - Healthy: {is_healthy}, Disease: {disease}, Score: {health_score:.1f}")
+    
+    # Get AI care recommendations using the existing get_care_recommendations function
+    care_recommendations = []
+    try:
+        # Use the existing get_care_recommendations function which has proper parsing
+        care_request = {
+            "species": species,
+            "disease": disease if not is_healthy else None
+        }
+        
+        # Create a mock user_info dict (not used in get_care_recommendations but required by signature)
+        mock_user_info = {"cognito_user_id": "rescan_user"}
+        
+        print(f"🤖 Getting care recommendations for rescan using existing function: {species}, disease: {disease}")
+        
+        # Call the existing get_care_recommendations function
+        care_response = await get_care_recommendations(care_request, mock_user_info)
+        
+        if care_response and 'care_recommendations' in care_response:
+            care_recommendations = care_response['care_recommendations']
+            print(f"✅ Got {len(care_recommendations)} care recommendations from existing function")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to get AI care recommendations for rescan: {e}")
+    
+    # Fallback recommendations if API call failed
+    if not care_recommendations:
+        if is_healthy:
+            care_recommendations = [
+                f"Continue current care routine for your {species}",
+                "Monitor for any changes in leaf color or texture",
+                "Maintain consistent watering schedule",
+                "Ensure adequate light conditions"
+            ]
+        else:
+            care_recommendations = [
+                f"Your {species} shows signs of {disease}",
+                "Isolate from other plants if possible",
+                "Adjust watering frequency",
+                "Consider consulting plant care resources"
+            ]
+    
+    return schemas.ScanResult(
+        species=species,
+        confidence=1.0,  # We know the species with certainty for rescans
+        is_healthy=is_healthy,
+        disease=disease,
+        health_score=health_score,
+        care_recommendations=care_recommendations
+    )
+
 async def parse_disease_predictions_async(hf_response: List[dict], image_data: bytes = None) -> schemas.ScanResult:
     """Parse Hugging Face response into our ScanResult format (async with caching)"""
     if not hf_response or not isinstance(hf_response, list):
@@ -650,6 +767,23 @@ async def scan_plant(
         
         print(f"✅ User found: {user.email}")
         
+        # Check if this is a rescan of existing plant
+        existing_plant = None
+        if plant_id:
+            existing_plant = db.query(models.Plant).filter(
+                models.Plant.id == plant_id,
+                models.Plant.user_id == user.id
+            ).first()
+            
+            if not existing_plant:
+                print(f"❌ Plant not found for ID: {plant_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Plant not found"
+                )
+            
+            print(f"🔄 Rescanning existing plant: {existing_plant.name} ({existing_plant.species})")
+        
         # Validate image file
         print(f"📎 Image details: filename={image.filename}, content_type={image.content_type}, size={image.size}")
         
@@ -688,93 +822,141 @@ async def scan_plant(
         # Check if HF_TOKEN is available
         if not hf_token:
             # Fallback to mock result if no API token
-            scan_result = schemas.ScanResult(
-                species="Monstera deliciosa",
-                confidence=0.85,
-                is_healthy=True,
-                disease=None,
-                health_score=92.0,
-                care_recommendations=[
-                    "Provide bright, indirect light",
-                    "Water when soil is dry to touch",
-                    "Maintain high humidity (60-80%)",
-                    "Fertilize monthly during growing season"
-                ]
-            )
-        else:
-            # Call both APIs concurrently for better performance
-            print("🚀 Calling APIs concurrently...")
-            try:
-                plantnet_task = query_plantnet_api_async(compressed_image_data)
-                hf_task = query_huggingface_model_async(compressed_image_data)
-                
-                plantnet_response, hf_response = await asyncio.gather(
-                    plantnet_task, hf_task, return_exceptions=True
-                )
-                
-                # Handle exceptions from concurrent calls
-                if isinstance(plantnet_response, Exception):
-                    print(f"❌ PlantNet API failed: {plantnet_response}")
-                    plantnet_response = {"results": []}  # Empty fallback
-                
-                if isinstance(hf_response, Exception):
-                    print(f"❌ Hugging Face API failed: {hf_response}")
-                    # Fallback to sync call or mock data
-                    try:
-                        hf_response = query_huggingface_model(compressed_image_data)
-                    except:
-                        raise HTTPException(
-                            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail="All AI services are currently unavailable"
-                        )
-            
-            except Exception as e:
-                print(f"❌ Error in concurrent API calls: {str(e)}")
-                # Last resort: provide a fallback response with basic plant care advice
-                print("🛡️ Using fallback response due to API failures")
-                
-                # Try to extract plant info from filename if available
-                filename = image.filename or "unknown"
-                species_guess = "Houseplant"
-                
-                # Simple filename-based species detection
-                filename_lower = filename.lower()
-                if any(word in filename_lower for word in ['monstera', 'deliciosa']):
-                    species_guess = "Monstera deliciosa"
-                elif any(word in filename_lower for word in ['philodendron', 'philo']):
-                    species_guess = "Philodendron"
-                elif any(word in filename_lower for word in ['pothos', 'devil', 'ivy']):
-                    species_guess = "Pothos"
-                elif any(word in filename_lower for word in ['snake', 'sansevieria']):
-                    species_guess = "Snake Plant"
-                elif any(word in filename_lower for word in ['ficus', 'fiddle', 'leaf']):
-                    species_guess = "Fiddle Leaf Fig"
-                
-                # Assume plant is healthy if we can't analyze it
+            if existing_plant:
+                # For rescans, use known species and focus on health analysis
                 scan_result = schemas.ScanResult(
-                    species=species_guess,
-                    confidence=0.75,
+                    species=existing_plant.species,  # Use existing species
+                    confidence=1.0,  # We know the species with certainty
                     is_healthy=True,
                     disease=None,
-                    health_score=85.0,
+                    health_score=92.0,
                     care_recommendations=[
                         "Provide bright, indirect light",
-                        "Water when top inch of soil is dry",
-                        "Maintain moderate humidity (40-60%)",
-                        "Monitor for pests and diseases regularly",
-                        "AI analysis temporarily unavailable - manual inspection recommended"
+                        "Water when soil is dry to touch",
+                        "Maintain high humidity (60-80%)",
+                        "Fertilize monthly during growing season"
                     ]
                 )
             else:
-                # Parse and return result using async function
-                scan_result = await parse_disease_predictions_async(hf_response, compressed_image_data)
+                # New plant scan - need species identification
+                scan_result = schemas.ScanResult(
+                    species="Monstera deliciosa",
+                    confidence=0.85,
+                    is_healthy=True,
+                    disease=None,
+                    health_score=92.0,
+                    care_recommendations=[
+                        "Provide bright, indirect light",
+                        "Water when soil is dry to touch",
+                        "Maintain high humidity (60-80%)",
+                        "Fertilize monthly during growing season"
+                    ]
+                )
+        else:
+            if existing_plant:
+                # For rescans, skip species identification and focus only on health analysis
+                print(f"🔄 Rescanning - skipping species identification, focusing on health analysis for {existing_plant.species}")
+                try:
+                    # Only call disease detection, not species identification
+                    hf_response = await query_huggingface_model_async(compressed_image_data)
+                    
+                    # Parse health analysis results using known species
+                    scan_result = await parse_disease_predictions_for_rescan_async(
+                        hf_response, 
+                        compressed_image_data, 
+                        existing_plant.species
+                    )
+                    
+                except Exception as e:
+                    print(f"❌ Health analysis failed for rescan: {str(e)}")
+                    # Fallback for rescans
+                    scan_result = schemas.ScanResult(
+                        species=existing_plant.species,
+                        confidence=1.0,
+                        is_healthy=True,
+                        disease=None,
+                        health_score=85.0,
+                        care_recommendations=[
+                            "Health analysis temporarily unavailable",
+                            "Continue with regular care routine",
+                            "Monitor plant visually for changes",
+                            "Try scanning again in a few minutes"
+                        ]
+                    )
+            else:
+                # New plant scan - call both APIs concurrently for species identification and health
+                print("🚀 New plant scan - calling APIs for species identification and health analysis...")
+                try:
+                    plantnet_task = query_plantnet_api_async(compressed_image_data)
+                    hf_task = query_huggingface_model_async(compressed_image_data)
+                    
+                    plantnet_response, hf_response = await asyncio.gather(
+                        plantnet_task, hf_task, return_exceptions=True
+                    )
+                    
+                    # Handle exceptions from concurrent calls
+                    if isinstance(plantnet_response, Exception):
+                        print(f"❌ PlantNet API failed: {plantnet_response}")
+                        plantnet_response = {"results": []}  # Empty fallback
+                    
+                    if isinstance(hf_response, Exception):
+                        print(f"❌ Hugging Face API failed: {hf_response}")
+                        # Fallback to sync call or mock data
+                        try:
+                            hf_response = query_huggingface_model(compressed_image_data)
+                        except:
+                            raise HTTPException(
+                                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                                detail="All AI services are currently unavailable"
+                            )
+                
+                except Exception as e:
+                    print(f"❌ Error in concurrent API calls: {str(e)}")
+                    # Last resort: provide a fallback response with basic plant care advice
+                    print("🛡️ Using fallback response due to API failures")
+                    
+                    # Try to extract plant info from filename if available
+                    filename = image.filename or "unknown"
+                    species_guess = "Houseplant"
+                    
+                    # Simple filename-based species detection
+                    filename_lower = filename.lower()
+                    if any(word in filename_lower for word in ['monstera', 'deliciosa']):
+                        species_guess = "Monstera deliciosa"
+                    elif any(word in filename_lower for word in ['philodendron', 'philo']):
+                        species_guess = "Philodendron"
+                    elif any(word in filename_lower for word in ['pothos', 'devil', 'ivy']):
+                        species_guess = "Pothos"
+                    elif any(word in filename_lower for word in ['snake', 'sansevieria']):
+                        species_guess = "Snake Plant"
+                    elif any(word in filename_lower for word in ['ficus', 'fiddle', 'leaf']):
+                        species_guess = "Fiddle Leaf Fig"
+                    
+                    # Assume plant is healthy if we can't analyze it
+                    scan_result = schemas.ScanResult(
+                        species=species_guess,
+                        confidence=0.75,
+                        is_healthy=True,
+                        disease=None,
+                        health_score=85.0,
+                        care_recommendations=[
+                            "Provide bright, indirect light",
+                            "Water when top inch of soil is dry",
+                            "Maintain moderate humidity (40-60%)",
+                            "Monitor for pests and diseases regularly",
+                            "AI analysis temporarily unavailable - manual inspection recommended"
+                        ]
+                    )
+                else:
+                    # Parse and return result using async function
+                    scan_result = await parse_disease_predictions_async(hf_response, compressed_image_data)
         
         # 💾 SAVE TO DATABASE ONLY IF SCANNING EXISTING PLANT
         if plant_id:
             print("💾 Saving scan results to database for existing plant...")
             
             try:
-                # Create PlantScan record only for existing plants in garden
+                # Create PlantScan record for existing plants in garden
                 plant_scan = models.PlantScan(
                     user_id=user.id,
                     plant_id=plant_id,
@@ -785,10 +967,19 @@ async def scan_plant(
                 )
                 
                 db.add(plant_scan)
+                
+                # 🔄 UPDATE PLANTS TABLE WITH NEW HEALTH SCORE
+                if existing_plant:
+                    existing_plant.current_health_score = scan_result.health_score
+                    db.add(existing_plant)  # Ensure the plant is tracked for updates
+                    print(f"🔄 Updated plant current_health_score: {existing_plant.name} -> {scan_result.health_score}")
+                
                 db.commit()
                 db.refresh(plant_scan)
+                if existing_plant:
+                    db.refresh(existing_plant)  # Refresh the plant object too
                 
-                print(f"✅ PlantScan created for existing plant: {plant_scan.id}")
+                print(f"✅ PlantScan created and plant health updated: {plant_scan.id}")
                 
             except Exception as db_error:
                 print(f"❌ Database error: {db_error}")
@@ -1009,6 +1200,3 @@ async def get_plant_scan_history(
     print(f"✅ Found {len(plant_scans)} plant scans for plant {plant_id}")
     
     return plant_scans
-
-
-# Old health-reports endpoint removed - functionality merged into PlantScan

@@ -43,6 +43,7 @@ function App() {
   const [scanResult, setScanResult] = useState<PlantScanResult | null>(null);
   const [originalImageFile, setOriginalImageFile] = useState<File | null>(null); // Store original image
   const [plantStreak] = useState(14); // Mock streak
+  const [rescanPlantId, setRescanPlantId] = useState<string | null>(null); // Track plant being rescanned
 
   // Check if user is already authenticated on app load
   useEffect(() => {
@@ -102,20 +103,31 @@ function App() {
     setCurrentState('results');
   };
 
+  const handleScanPlant = (plantId?: string) => {
+    // Set the plant ID if rescanning an existing plant
+    setRescanPlantId(plantId || null);
+    setCurrentState('scanner');
+  };
+
   const handleAddToGarden = (plantId: string, plantName: string) => {
-    // Plant successfully added to garden
-    console.log(`🌱 Plant "${plantName}" (ID: ${plantId}) added to garden!`);
-    
-    // Show success toast instead of browser alert
-    showSuccess(`🌱 Successfully added "${plantName}" to your garden!`, 4000);
+    if (rescanPlantId) {
+      // This was a rescan - data has already been updated in the backend
+      console.log(`🔄 Plant "${plantName}" (ID: ${rescanPlantId}) rescanned successfully!`);
+      showSuccess(`Successfully updated "${plantName}" health data!`, 4000);
+    } else {
+      // This was a new plant scan - plant was added to garden
+      console.log(`🌱 Plant "${plantName}" (ID: ${plantId}) added to garden!`);
+      showSuccess(`Successfully added "${plantName}" to your garden!`, 4000);
+    }
     
     // Navigate back to dashboard after a short delay
     setTimeout(() => {
       setCurrentState('dashboard');
       
-      // Clear the scan results
+      // Clear the scan results and rescan state
       setScanResult(null);
       setOriginalImageFile(null);
+      setRescanPlantId(null);
     }, 1500); // Give user time to see the success message
   };
 
@@ -135,6 +147,8 @@ function App() {
   const handleBack = () => {
     if (currentState === 'scanner') {
       setCurrentState('dashboard');
+      // Clear rescan state when going back from scanner
+      setRescanPlantId(null);
     } else if (currentState === 'results') {
       setCurrentState('scanner');
     }
@@ -175,7 +189,7 @@ function App() {
         <div className="plant-grow">
           <Dashboard
             user={user}
-            onScanPlant={() => setCurrentState('scanner')}
+            onScanPlant={handleScanPlant}
             onSignOut={handleSignOut}
           />
         </div>
@@ -183,7 +197,10 @@ function App() {
 
       {currentState === 'scanner' && (
         <div className="p-4 plant-grow">
-          <PlantScanner onScanComplete={handleScanComplete} />
+          <PlantScanner 
+            onScanComplete={handleScanComplete}
+            plantId={rescanPlantId || undefined}
+          />
         </div>
       )}
 
@@ -194,6 +211,8 @@ function App() {
             streak={plantStreak}
             onAddToGarden={handleAddToGarden}
             originalImage={originalImageFile || undefined}
+            isRescan={!!rescanPlantId}
+            rescanPlantId={rescanPlantId || undefined}
           />
         </div>
       )}

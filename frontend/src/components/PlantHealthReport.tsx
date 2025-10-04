@@ -24,9 +24,11 @@ interface PlantHealthReportProps {
   streak: number;
   onAddToGarden?: (plantId: string, plantName: string) => void; // Optional callback with plant details
   originalImage?: File; // Original image file for adding to garden
+  isRescan?: boolean; // Whether this is a rescan of an existing plant
+  rescanPlantId?: string; // ID of the plant being rescanned
 }
 
-export function PlantHealthReport({ result, streak, onAddToGarden, originalImage }: PlantHealthReportProps) {
+export function PlantHealthReport({ result, streak, onAddToGarden, originalImage, isRescan = false, rescanPlantId }: PlantHealthReportProps) {
   const [isAddingToGarden, setIsAddingToGarden] = useState(false);
   const [addToGardenStatus, setAddToGardenStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -124,6 +126,13 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
     setShowAddPlantDialog(true);
   };
 
+  const handleBackToDashboard = () => {
+    // For rescans, trigger the callback with the rescan plant ID and species name
+    if (isRescan && rescanPlantId && onAddToGarden) {
+      onAddToGarden(rescanPlantId, result.species);
+    }
+  };
+
   const getHealthScoreColor = (score: number) => {
     if (score >= 70) return 'bg-green-600 text-white hover:bg-green-700';
     if (score >= 50) return 'bg-yellow-600 text-white hover:bg-yellow-700';
@@ -151,7 +160,9 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
                 alt="icon"
                 className="inline-block"
               />
-              <h3 className="text-2xl text-gray-800">Analysis Results</h3>
+              <h3 className="text-2xl text-gray-800">
+                {isRescan ? 'Health Update Results' : 'Analysis Results'}
+              </h3>
             </span>
             <div className="flex items-center gap-2">
               {result.isHealthy ? (
@@ -178,8 +189,13 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
             {/* Species Information */}
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-lg border">
-                <h3 className="text-sm font-medium text-slate-600 mb-2">IDENTIFIED SPECIES</h3>
+                <h3 className="text-sm font-medium text-slate-600 mb-2">
+                  {isRescan ? 'PLANT SPECIES' : 'IDENTIFIED SPECIES'}
+                </h3>
                 <p className="text-xl font-semibold text-slate-900">{result.species}</p>
+                {isRescan && (
+                  <p className="text-sm text-blue-600 mt-1">✓ Known species - focused on health analysis</p>
+                )}
               </div>
 
               <div className="bg-slate-50 p-4 rounded-lg border">
@@ -383,17 +399,25 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
             )}
 
             <button
-              onClick={handleOpenAddDialog}
-              disabled={isAddingToGarden || addToGardenStatus === 'success'}
-              className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${addToGardenStatus === 'success'
-                ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
-                : isAddingToGarden
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
+              onClick={isRescan ? handleBackToDashboard : handleOpenAddDialog}
+              disabled={(!isRescan && (isAddingToGarden || addToGardenStatus === 'success'))}
+              className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${
+                isRescan 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : addToGardenStatus === 'success'
+                    ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
+                    : isAddingToGarden
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
-                {isAddingToGarden ? (
+                {isRescan ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Health Data Updated - Back to Dashboard
+                  </>
+                ) : isAddingToGarden ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Adding to Garden...

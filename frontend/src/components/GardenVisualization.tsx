@@ -20,7 +20,7 @@ interface Plant {
 
 interface GardenVisualizationProps {
   plants: Plant[];
-  onScanPlant: () => void;
+  onScanPlant: (plantId?: string) => void;
 }
 
 export function GardenVisualization({ plants, onScanPlant }: GardenVisualizationProps) {
@@ -58,7 +58,7 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
                   Start by scanning your first plant to create your digital garden
                 </p>
                  <Button
-                      onClick={onScanPlant}
+                      onClick={() => onScanPlant()}
                       variant="outline"
                       size="lg"
                       className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
@@ -123,7 +123,7 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={onScanPlant}
+                    onClick={() => onScanPlant()}
                     className="aspect-square bg-muted/20 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center hover:bg-muted/40 hover:border-muted-foreground/50 transition-all hover:scale-105 transform"
                   >
                     <span className="text-2xl text-muted-foreground">+</span>

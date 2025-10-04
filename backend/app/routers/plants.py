@@ -38,29 +38,29 @@ def get_user_plants(
     
     return plants
 
-@router.post("/", response_model=schemas.Plant)
-def create_plant(
-    plant: schemas.PlantCreate,
-    user_info: dict = Depends(get_current_user_info),
-    db: Session = Depends(get_db)
-):
-    """Add a new plant to user's garden"""
-    user = db.query(models.User).filter(
-        models.User.cognito_user_id == user_info["cognito_user_id"]
-    ).first()
+# @router.post("/", response_model=schemas.Plant)
+# def create_plant(
+#     plant: schemas.PlantCreate,
+#     user_info: dict = Depends(get_current_user_info),
+#     db: Session = Depends(get_db)
+# ):
+#     """Add a new plant to user's garden"""
+#     user = db.query(models.User).filter(
+#         models.User.cognito_user_id == user_info["cognito_user_id"]
+#     ).first()
     
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+#     if not user:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="User not found"
+#         )
     
-    db_plant = models.Plant(**plant.dict(), user_id=user.id)
-    db.add(db_plant)
-    db.commit()
-    db.refresh(db_plant)
+#     db_plant = models.Plant(**plant.dict(), user_id=user.id)
+#     db.add(db_plant)
+#     db.commit()
+#     db.refresh(db_plant)
     
-    return db_plant
+#     return db_plant
 
 @router.post("/add-to-garden", response_model=schemas.AddToGardenResponse)
 def add_to_garden(
@@ -95,6 +95,7 @@ def add_to_garden(
             location=request.location,
             care_notes=request.care_notes,
             current_health_score=request.health_score or 100.0,
+            plant_icon=request.plant_icon or "🌱",  # Default to seedling emoji
             streak_days=1,  # Start with day 1
             last_check_in=func.now(),
             image_url=image_url,

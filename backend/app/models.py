@@ -36,6 +36,7 @@ class Plant(Base):
     # Plant details
     image_url = Column(String)  # S3 URL for plant image
     care_notes = Column(Text)
+    plant_icon = Column(String, default="🌱")  # User-selected emoji icon
     
     # Location and environment
     location = Column(String)  # Indoor/Outdoor, Room name, etc.

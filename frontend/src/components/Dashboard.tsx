@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { Trophy, Flame, Users, TrendingUp, LogOut } from 'lucide-react';
+import { Flame, Users, LogOut, Loader2 } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
+import { plantsService } from '../services/plantsService';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
 import plantUserIcon from '../assets/plant_user.png';
@@ -24,6 +25,7 @@ interface Plant {
   streak: number;
   lastCheckIn: string;
   image?: string;
+  icon?: string;
 }
 
 interface Achievement {
@@ -53,29 +55,46 @@ interface DashboardProps {
 
 export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'plants' | 'achievements' | 'leaderboard'>('plants');
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [isLoadingPlants, setIsLoadingPlants] = useState(true);
+  const [plantsError, setPlantsError] = useState<string>('');
 
-  // Mock data - in real app this would come from your database
-  const plants: Plant[] = [
-    {
-      id: '1',
-      name: 'My Monstera',
-      species: 'Monstera Deliciosa',
-      healthScore: 92,
-      streak: 14,
-      lastCheckIn: '2024-01-15',
-      image: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=300'
-    },
-    {
-      id: '2',
-      name: 'Snake Plant',
-      species: 'Sansevieria',
-      healthScore: 85,
-      streak: 7,
-      lastCheckIn: '2024-01-14',
-      image: 'https://images.unsplash.com/photo-1493652430944-bc5cd27c8e74?w=300'
+  // Fetch user plants on component mount
+  useEffect(() => {
+    const fetchUserPlants = async () => {
+      try {
+        setIsLoadingPlants(true);
+        setPlantsError('');
+        
+        console.log('🌱 Fetching user plants for dashboard...');
+        const userPlants = await plantsService.getUserPlantsForDashboard();
+        setPlants(userPlants);
+        console.log('✅ User plants loaded:', userPlants);
+        
+      } catch (error) {
+        console.error('❌ Failed to fetch user plants:', error);
+        setPlantsError(error instanceof Error ? error.message : 'Failed to load plants');
+        // Keep empty array so dashboard still renders
+        setPlants([]);
+      } finally {
+        setIsLoadingPlants(false);
+      }
+    };
+
+    fetchUserPlants();
+  }, []);
+
+  // Function to refresh plants (can be called after adding a new plant)
+  const refreshPlants = async () => {
+    try {
+      const userPlants = await plantsService.getUserPlantsForDashboard();
+      setPlants(userPlants);
+    } catch (error) {
+      console.error('❌ Failed to refresh plants:', error);
     }
-  ];
+  };
 
+  // Mock data for achievements and leaderboard (these would also come from backend eventually)
   const achievements: Achievement[] = [
     {
       id: '1',
@@ -123,8 +142,11 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     { rank: 5, name: 'Mike Garden', score: 1432, plants: 5 }
   ];
 
-  const totalHealthScore = plants.reduce((sum, plant) => sum + plant.healthScore, 0) / plants.length;
+  const totalHealthScore = plants.length > 0 
+    ? plants.reduce((sum, plant) => sum + plant.healthScore, 0) / plants.length 
+    : 0;
   const earnedAchievements = achievements.filter(a => a.earned).length;
+  const bestStreak = plants.length > 0 ? Math.max(...plants.map(p => p.streak)) : 0;
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -236,7 +258,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Best Streak</p>
-                <p className="text-3xl font-bold text-orange-600">{Math.max(...plants.map(p => p.streak))}</p>
+                <p className="text-3xl font-bold text-orange-600">{bestStreak}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
@@ -323,52 +345,84 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               />
               My Plant Collection
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plants.map((plant) => (
-                <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
-                      <Badge
-                        className={`px-3 py-1 text-sm font-medium ${plant.healthScore >= 80
-                          ? 'bg-green-100 text-green-800 border-green-200'
-                          : plant.healthScore >= 60
-                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                            : 'bg-red-100 text-red-800 border-red-200'
-                          }`}
-                      >
-                        {plant.healthScore}/100
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-gray-600 font-medium">{plant.species}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm font-medium">
-                        <span>Health Score</span>
-                        <span className={plant.healthScore >= 80 ? 'text-green-600' : plant.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
-                          {plant.healthScore}%
+
+            {/* Loading State */}
+            {isLoadingPlants && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <Loader2 className="w-8 h-8 animate-spin text-green-600 mx-auto" />
+                  <p className="text-gray-600">Loading your plants...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {plantsError && !isLoadingPlants && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <p className="text-red-700 mb-4">❌ {plantsError}</p>
+                <Button 
+                  onClick={refreshPlants}
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {/* Plants Grid */}
+            {!isLoadingPlants && !plantsError && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {plants.map((plant) => (
+                  <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{plant.icon || '🌱'}</span>
+                          <div>
+                            <CardTitle className="text-xl font-bold text-gray-800">{plant.name}</CardTitle>
+                            <CardDescription className="text-gray-600 font-medium">{plant.species}</CardDescription>
+                          </div>
+                        </div>
+                        <Badge
+                          className={`px-3 py-1 text-sm font-medium ${plant.healthScore >= 80
+                            ? 'bg-green-100 text-green-800 border-green-200'
+                            : plant.healthScore >= 60
+                              ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                              : 'bg-red-100 text-red-800 border-red-200'
+                            }`}
+                        >
+                          {Math.round(plant.healthScore)}/100
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm font-medium">
+                          <span>Health Score</span>
+                          <span className={plant.healthScore >= 80 ? 'text-green-600' : plant.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                            {Math.round(plant.healthScore)}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={plant.healthScore}
+                          className="h-3"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-orange-600 font-medium">
+                          <Flame className="w-4 h-4" />
+                          {plant.streak} day streak
+                        </span>
+                        <span className="text-gray-500">
+                          {plant.lastCheckIn}
                         </span>
                       </div>
-                      <Progress
-                        value={plant.healthScore}
-                        className="h-3"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-orange-600 font-medium">
-                        <Flame className="w-4 h-4" />
-                        {plant.streak} day streak
-                      </span>
-                      <span className="text-gray-500">
-                        {plant.lastCheckIn}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
 
-              {plants.length > 0 && (
+                {/* Add Plant Card - Only show if we have plants or no error */}
                 <Card className="border-2 border-dashed border-green-300 card-hover">
                   <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
@@ -376,10 +430,13 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                     </div>
                     <div className="text-center space-y-2">
                       <p className="text-lg font-medium text-gray-700">
-                        Add More Plants
+                        {plants.length === 0 ? 'Start Your Garden' : 'Add More Plants'}
                       </p>
                       <p className="text-gray-500">
-                        Scan a new plant to expand your garden
+                        {plants.length === 0 
+                          ? 'Scan your first plant to begin your digital garden' 
+                          : 'Scan a new plant to expand your garden'
+                        }
                       </p>
                     </div>
                     <Button
@@ -387,12 +444,13 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       variant="outline"
                       size="lg"
                       className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
-                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> Scan New Plant
+                      <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> 
+                      {plants.length === 0 ? 'Scan Your First Plant' : 'Scan New Plant'}
                     </Button>
                   </CardContent>
                 </Card>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

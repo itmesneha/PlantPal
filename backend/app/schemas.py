@@ -42,6 +42,7 @@ class AddToGardenRequest(BaseModel):
     care_notes: Optional[str] = None  # Initial notes
     health_score: Optional[float] = 100.0  # From scan result
     image_data: Optional[str] = None  # Base64 encoded image (optional)
+    plant_icon: Optional[str] = None  # User-selected emoji icon
 
 class PlantUpdate(BaseModel):
     name: Optional[str] = None
@@ -56,6 +57,7 @@ class Plant(PlantBase):
     streak_days: int
     last_check_in: Optional[datetime]
     image_url: Optional[str]
+    plant_icon: Optional[str] = "🌱"
     created_at: datetime
     updated_at: Optional[datetime]
     

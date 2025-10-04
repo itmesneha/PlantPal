@@ -11,6 +11,7 @@ export interface AddToGardenRequest {
   care_notes?: string;
   health_score?: number;
   image_data?: string; // Base64 encoded image
+  plant_icon?: string; // User-selected emoji icon
 }
 
 export interface AddToGardenResponse {

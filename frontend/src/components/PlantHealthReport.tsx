@@ -5,8 +5,10 @@ import { CheckCircle, AlertTriangle, Droplets, Sun, Scissors, Loader2, Bot } fro
 import { useState, useEffect, useRef } from 'react';
 import { gardenService, AddToGardenRequest } from '../services/gardenService';
 import { plantScanService, CareRecommendationsResponse } from '../services/plantScanService';
+import { AddPlantDialog } from './AddPlantDialog';
 import analysisIcon from '../assets/analysis_results.png';
 import prescriptionIcon from '../assets/prescription.png';
+import plant1Icon from '../assets/plant-icons/plant1.png';
 
 interface PlantScanResult {
   species: string;
@@ -28,6 +30,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
   const [isAddingToGarden, setIsAddingToGarden] = useState(false);
   const [addToGardenStatus, setAddToGardenStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showAddPlantDialog, setShowAddPlantDialog] = useState(false);
   const [aiCareRecommendations, setAiCareRecommendations] = useState<CareRecommendationsResponse | null>(null);
   const [isLoadingAiRecommendations, setIsLoadingAiRecommendations] = useState(false);
   const [aiRecommendationsError, setAiRecommendationsError] = useState<string>('');
@@ -117,21 +120,20 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
     };
   }, [result.species, result.disease, result.isHealthy]); // Removed confidence from deps to prevent too many calls
 
-  const handleAddToGarden = async () => {
+  const handleAddToGarden = async (plantName: string, selectedIcon: string) => {
     setIsAddingToGarden(true);
     setAddToGardenStatus('idle');
     setErrorMessage('');
 
     try {
       // Prepare the request data
-      const plantName = result.species || 'My Plant'; // Default name
-
       const addRequest: AddToGardenRequest = {
         plant_name: plantName,
         species: result.species,
         common_name: result.species, // Use species as common name for now
         health_score: result.healthScore,
         care_notes: result.careRecommendations.join('; '), // Join recommendations as notes
+        plant_icon: selectedIcon, // Include the selected icon
       };
 
       // Add image data if available
@@ -162,6 +164,10 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
     } finally {
       setIsAddingToGarden(false);
     }
+  };
+
+  const handleOpenAddDialog = () => {
+    setShowAddPlantDialog(true);
   };
 
   const getHealthScoreColor = (score: number) => {
@@ -423,7 +429,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
             )}
 
             <button
-              onClick={handleAddToGarden}
+              onClick={handleOpenAddDialog}
               disabled={isAddingToGarden || addToGardenStatus === 'success'}
               className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl ${addToGardenStatus === 'success'
                   ? 'bg-green-600 text-white cursor-not-allowed opacity-75'
@@ -445,7 +451,13 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
                   </>
                 ) : (
                   <>
-                    🌱 Add to My Garden
+                    <img
+              src={plant1Icon}
+              width={32}
+              height={32}
+              alt="icon"
+              className="inline-block"
+            /> Add to My Garden
                   </>
                 )}
               </div>
@@ -453,6 +465,15 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Plant Dialog */}
+      <AddPlantDialog
+        result={result}
+        isOpen={showAddPlantDialog}
+        onClose={() => setShowAddPlantDialog(false)}
+        onAddToGarden={handleAddToGarden}
+        originalImage={originalImage}
+      />
     </div>
   );
 }

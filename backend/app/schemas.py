@@ -27,9 +27,6 @@ class User(UserBase):
 class PlantBase(BaseModel):
     name: str
     species: str
-    common_name: Optional[str] = None
-    location: Optional[str] = None
-    care_notes: Optional[str] = None
 
 class PlantCreate(PlantBase):
     pass
@@ -37,16 +34,16 @@ class PlantCreate(PlantBase):
 class AddToGardenRequest(BaseModel):
     plant_name: str  # User's custom name for the plant
     species: str  # From scan result
-    common_name: Optional[str] = None  # From scan result
-    location: Optional[str] = None  # Where they keep the plant
-    care_notes: Optional[str] = None  # Initial notes
     health_score: Optional[float] = 100.0  # From scan result
-    image_data: Optional[str] = None  # Base64 encoded image (optional)
+    plant_icon: Optional[str] = None  # User-selected emoji icon
+    
+    # Scan data (optional - from recent scan results)
+    disease_detected: Optional[str] = None
+    is_healthy: Optional[bool] = True
+    care_notes: Optional[str] = None
 
 class PlantUpdate(BaseModel):
     name: Optional[str] = None
-    location: Optional[str] = None
-    care_notes: Optional[str] = None
     current_health_score: Optional[float] = None
 
 class Plant(PlantBase):
@@ -55,7 +52,7 @@ class Plant(PlantBase):
     current_health_score: float
     streak_days: int
     last_check_in: Optional[datetime]
-    image_url: Optional[str]
+    plant_icon: Optional[str] = "🌱"
     created_at: datetime
     updated_at: Optional[datetime]
     
@@ -68,10 +65,32 @@ class AddToGardenResponse(BaseModel):
     message: str
     plant: Plant
 
-# Scan Session schemas
-class ScanSessionCreate(BaseModel):
-    original_image_url: str
-    plant_id: Optional[str] = None
+class DeletePlantResponse(BaseModel):
+    success: bool
+    message: str
+    deleted_plant_id: str
+
+# Plant Scan schemas (replaces ScanSession and HealthReport)
+class PlantScanCreate(BaseModel):
+    plant_id: str
+    health_score: float
+    care_notes: Optional[str] = None
+    disease_detected: Optional[str] = None
+    is_healthy: bool = True
+
+class PlantScan(BaseModel):
+    id: str
+    plant_id: Optional[str]
+    user_id: str
+    scan_date: datetime
+    health_score: float
+    care_notes: Optional[str]
+    disease_detected: Optional[str]
+    is_healthy: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 class ScanResult(BaseModel):
     species: str
@@ -80,52 +99,6 @@ class ScanResult(BaseModel):
     disease: Optional[str] = None
     health_score: float
     care_recommendations: List[str]
-
-class ScanSession(BaseModel):
-    id: str
-    user_id: str
-    plant_id: Optional[str]
-    original_image_url: str
-    identified_species: Optional[str]
-    confidence_score: Optional[float]
-    is_healthy: bool
-    disease_detected: Optional[str]
-    health_score: Optional[float]
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-# Health Report schemas
-class HealthReportCreate(BaseModel):
-    scan_session_id: str
-    plant_id: str
-    overall_health_score: float
-    leaf_condition: Optional[str] = None
-    pest_issues: Optional[List[Dict[str, Any]]] = []
-    disease_indicators: Optional[List[Dict[str, Any]]] = []
-    care_recommendations: Optional[List[str]] = []
-    
-    # Care recommendations
-    watering_recommendation: Optional[str] = None
-    light_recommendation: Optional[str] = None
-    humidity_recommendation: Optional[str] = None
-    fertilizer_recommendation: Optional[str] = None
-
-class HealthReport(BaseModel):
-    id: str
-    scan_session_id: str
-    plant_id: str
-    overall_health_score: float
-    leaf_condition: Optional[str]
-    pest_issues: Optional[List[Dict[str, Any]]]
-    disease_indicators: Optional[List[Dict[str, Any]]]
-    care_recommendations: Optional[List[str]]
-    watering_recommendation: Optional[str]
-    light_recommendation: Optional[str]
-    humidity_recommendation: Optional[str]
-    fertilizer_recommendation: Optional[str]
-    created_at: datetime
     
     class Config:
         from_attributes = True
@@ -228,7 +201,6 @@ class DashboardPlant(BaseModel):
     health_score: float
     streak_days: int
     last_check_in: Optional[datetime]
-    image_url: Optional[str]
     needs_attention: bool
 
 class DashboardResponse(BaseModel):

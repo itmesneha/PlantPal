@@ -6,10 +6,15 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 export interface AddToGardenRequest {
   plant_name: string;
   species: string;
-  common_name?: string;
-  location?: string;
-  care_notes?: string;
   health_score?: number;
+  plant_icon?: string;
+  
+  // Scan data (from scan results)
+  disease_detected?: string;
+  is_healthy?: boolean;
+  care_notes?: string;
+  
+  // Legacy fields (keep for compatibility)
   image_data?: string; // Base64 encoded image
 }
 
@@ -26,6 +31,37 @@ export interface AddToGardenResponse {
     streak_days: number;
     created_at: string;
   };
+}
+
+export interface DeletePlantResponse {
+  success: boolean;
+  message: string;
+  deleted_plant_id: string;
+}
+
+export interface UpdatePlantRequest {
+  name?: string;
+  current_health_score?: number;
+}
+
+export interface UpdatePlantResponse {
+  success: boolean;
+  message: string;
+  plant: Plant;
+}
+
+export interface Plant {
+  id: string;
+  name: string;
+  species: string;
+  common_name?: string;
+  care_notes?: string;
+  current_health_score: number;
+  streak_days: number;
+  last_check_in?: string;
+  plant_icon?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface GardenError {
@@ -103,6 +139,145 @@ class GardenService {
       }
       
       throw new Error('Unknown error occurred while adding plant to garden');
+    }
+  };
+
+  /**
+   * Delete a plant from user's garden
+   * @param plantId - ID of the plant to delete
+   * @returns Promise<DeletePlantResponse> - Response confirming deletion
+   */
+  deletePlant = async (plantId: string): Promise<DeletePlantResponse> => {
+    try {
+      console.log('🗑️ Deleting plant from garden:', plantId);
+      console.log('🔗 API URL:', `${API_BASE_URL}/api/v1/plants/${plantId}`);
+
+      // Get authentication token
+      const token = await this.getAuthToken();
+      console.log('🔑 Auth token obtained for delete request');
+
+      // Make API request
+      const response = await fetch(`${API_BASE_URL}/api/v1/plants/${plantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Delete response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('❌ Delete API error response:', errorData);
+        throw new Error(
+          errorData?.detail || 
+          `Failed to delete plant with status ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const result: DeletePlantResponse = await response.json();
+      console.log('✅ Plant deleted from garden successfully:', result);
+
+      return result;
+
+    } catch (error) {
+      console.error('❌ Failed to delete plant from garden:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Unknown error occurred while deleting plant from garden');
+    }
+  };
+
+  /**
+   * Update a plant in user's garden
+   * @param plantId - ID of the plant to update
+   * @param request - Plant update details
+   * @returns Promise<Plant> - Updated plant details
+   */
+  updatePlant = async (plantId: string, request: UpdatePlantRequest): Promise<Plant> => {
+    try {
+      console.log('🔄 Updating plant:', plantId, request);
+
+      const token = await this.getAuthToken();
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/plants/${plantId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.detail || 
+          `Failed to update plant with status ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const updatedPlant: Plant = await response.json();
+      console.log('✅ Plant updated successfully:', updatedPlant);
+
+      return updatedPlant;
+
+    } catch (error) {
+      console.error('❌ Failed to update plant:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Unknown error occurred while updating plant');
+    }
+  };
+
+  /**
+   * Get all plants in user's garden
+   * @returns Promise<Plant[]> - Array of user's plants
+   */
+  getUserPlants = async (): Promise<Plant[]> => {
+    try {
+      console.log('🌱 Fetching user plants from garden');
+
+      // Get authentication token
+      const token = await this.getAuthToken();
+
+      // Make API request
+      const response = await fetch(`${API_BASE_URL}/api/v1/plants/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.detail || 
+          `Failed to fetch plants with status ${response.status}: ${response.statusText}`
+        );
+      }
+
+      const plants: Plant[] = await response.json();
+      console.log('✅ User plants fetched successfully:', plants.length, 'plants found');
+
+      return plants;
+
+    } catch (error) {
+      console.error('❌ Failed to fetch user plants:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Unknown error occurred while fetching user plants');
     }
   };
 

@@ -21,6 +21,7 @@ interface AddPlantDialogProps {
     onClose: () => void;
     onSuccess?: (plantId: string, plantName: string) => void; // Optional success callback
     originalImage?: File;
+    aiCareRecommendations?: string[]; // AI-powered care recommendations
 }
 
 // Icon Button Component
@@ -57,7 +58,7 @@ function IconButton({
     );
 }
 
-export function AddPlantDialog({ result, isOpen, onClose, onSuccess, originalImage }: AddPlantDialogProps) {
+export function AddPlantDialog({ result, isOpen, onClose, onSuccess, originalImage, aiCareRecommendations }: AddPlantDialogProps) {
     const [plantName, setPlantName] = useState(result.species || 'My Plant');
     const [selectedIcon, setSelectedIcon] = useState('default');
     const [isAdding, setIsAdding] = useState(false);
@@ -83,13 +84,36 @@ export function AddPlantDialog({ result, isOpen, onClose, onSuccess, originalIma
         setError('');
 
         try {
+            // Determine which care recommendations to use
+            let careNotes: string;
+            if (!result.isHealthy && aiCareRecommendations && aiCareRecommendations.length > 0) {
+                // Use AI-powered recommendations for diseased plants
+                careNotes = aiCareRecommendations.join('; ');
+                console.log('🤖 Using AI care recommendations for diseased plant:', careNotes);
+            } else if (result.isHealthy) {
+                // Use generic healthy plant care for healthy plants
+                const healthyCareNotes = [
+                    "Continue current care routine",
+                    "Monitor regularly for any changes", 
+                    "Maintain proper watering schedule",
+                    "Ensure adequate light conditions",
+                    "Check for pests monthly"
+                ];
+                careNotes = healthyCareNotes.join('; ');
+                console.log('🌱 Using generic care recommendations for healthy plant:', careNotes);
+            } else {
+                // Fallback to original recommendations
+                careNotes = result.careRecommendations.join('; ');
+                console.log('📋 Using fallback care recommendations:', careNotes);
+            }
+
             // Prepare the request data
             const addRequest: AddToGardenRequest = {
                 plant_name: plantName.trim(),
                 species: result.species,
                 common_name: result.species, // Use species as common name for now
                 health_score: result.healthScore,
-                care_notes: result.careRecommendations.join('; '), // Join recommendations as notes
+                care_notes: careNotes, // Use determined care notes
                 plant_icon: selectedIcon, // Include the selected icon
             };
 

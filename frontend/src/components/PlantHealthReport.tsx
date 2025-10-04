@@ -433,6 +433,7 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
           }
         }}
         originalImage={originalImage}
+        aiCareRecommendations={aiCareRecommendations?.care_recommendations || undefined}
       />
     </div>
   );

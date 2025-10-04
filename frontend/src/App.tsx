@@ -113,11 +113,11 @@ function App() {
     if (rescanPlantId) {
       // This was a rescan - data has already been updated in the backend
       console.log(`🔄 Plant "${plantName}" (ID: ${rescanPlantId}) rescanned successfully!`);
-      showSuccess(`Successfully updated "${plantName}" health data!`, 4000);
+      showSuccess(`Successfully updated health data!`, 4000);
     } else {
       // This was a new plant scan - plant was added to garden
       console.log(`🌱 Plant "${plantName}" (ID: ${plantId}) added to garden!`);
-      showSuccess(`Successfully added "${plantName}" to your garden!`, 4000);
+      showSuccess(`Successfully added to your garden!`, 4000);
     }
     
     // Navigate back to dashboard after a short delay

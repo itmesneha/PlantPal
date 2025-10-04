@@ -480,7 +480,7 @@ async def parse_disease_predictions_for_rescan_async(hf_response: List[dict], im
     disease = None
     health_score = 85.0  # Default healthy score
     
-    if 'healthy' not in label and confidence > 0.3:  # Lower threshold for disease detection
+    if 'healthy' not in label and confidence > 0.5:  # Use same threshold as new plant scans
         is_healthy = False
         
         # Parse disease name from label - extract only the disease part
@@ -516,34 +516,45 @@ async def parse_disease_predictions_for_rescan_async(hf_response: List[dict], im
         # Scale health score based on confidence (inverse relationship)
         health_score = max(30.0, 85.0 - (confidence * 55.0))
     else:
-        # Plant appears healthy
-        health_score = min(95.0, 70.0 + (confidence * 25.0))
+        # Plant appears healthy - use same logic as new plant scans
+        health_score = 100.0
     
     print(f"🏥 Health assessment - Healthy: {is_healthy}, Disease: {disease}, Score: {health_score:.1f}")
     
     # Get AI care recommendations using the existing get_care_recommendations function
     care_recommendations = []
-    try:
-        # Use the existing get_care_recommendations function which has proper parsing
-        care_request = {
-            "species": species,
-            "disease": disease if not is_healthy else None
-        }
-        
-        # Create a mock user_info dict (not used in get_care_recommendations but required by signature)
-        mock_user_info = {"cognito_user_id": "rescan_user"}
-        
-        print(f"🤖 Getting care recommendations for rescan using existing function: {species}, disease: {disease}")
-        
-        # Call the existing get_care_recommendations function
-        care_response = await get_care_recommendations(care_request, mock_user_info)
-        
-        if care_response and 'care_recommendations' in care_response:
-            care_recommendations = care_response['care_recommendations']
-            print(f"✅ Got {len(care_recommendations)} care recommendations from existing function")
-        
-    except Exception as e:
-        print(f"⚠️ Failed to get AI care recommendations for rescan: {e}")
+    
+    # For healthy plants, use generic recommendations without API call
+    if is_healthy:
+        care_recommendations = [
+            "Continue current care routine",
+            "Monitor regularly for any changes", 
+            "Maintain proper watering and light conditions"
+        ]
+        print(f"✅ Using generic recommendations for healthy {species}")
+    else:
+        # Only call API for diseased plants
+        try:
+            # Use the existing get_care_recommendations function which has proper parsing
+            care_request = {
+                "species": species,
+                "disease": disease
+            }
+            
+            # Create a mock user_info dict (not used in get_care_recommendations but required by signature)
+            mock_user_info = {"cognito_user_id": "rescan_user"}
+            
+            print(f"🤖 Getting care recommendations for diseased rescan using existing function: {species}, disease: {disease}")
+            
+            # Call the existing get_care_recommendations function
+            care_response = await get_care_recommendations(care_request, mock_user_info)
+            
+            if care_response and 'care_recommendations' in care_response:
+                care_recommendations = care_response['care_recommendations']
+                print(f"✅ Got {len(care_recommendations)} care recommendations from existing function")
+            
+        except Exception as e:
+            print(f"⚠️ Failed to get AI care recommendations for diseased rescan: {e}")
     
     # Fallback recommendations if API call failed
     if not care_recommendations:

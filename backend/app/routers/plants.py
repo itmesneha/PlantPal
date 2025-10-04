@@ -149,7 +149,7 @@ def update_plant(
     # Lookup user
     user = db.query(models.User).filter(
         models.User.cognito_user_id == user_info["cognito_user_id"]
-    ).first()
+    ).first() 
     
     if not user:
         print(f"❌ User not found for cognito_user_id: {user_info['cognito_user_id']}")

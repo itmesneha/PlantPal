@@ -70,6 +70,11 @@ class AddToGardenResponse(BaseModel):
     message: str
     plant: Plant
 
+class DeletePlantResponse(BaseModel):
+    success: bool
+    message: str
+    deleted_plant_id: str
+
 # Scan Session schemas
 class ScanSessionCreate(BaseModel):
     original_image_url: str

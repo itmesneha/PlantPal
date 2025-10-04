@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { Flame, Users, LogOut, Loader2 } from 'lucide-react';
+import { Flame, Users, LogOut, Loader2, X } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
 import { plantsService } from '../services/plantsService';
 import { plantIconService } from '../services/plantIconService';
+import { gardenService } from '../services/gardenService';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
 import plantUserIcon from '../assets/plant_user.png';
@@ -60,6 +61,9 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [isLoadingPlants, setIsLoadingPlants] = useState(true);
   const [plantsError, setPlantsError] = useState<string>('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
+  const [isDeletingPlant, setIsDeletingPlant] = useState(false);
 
   // Fetch user plants on component mount
   useEffect(() => {
@@ -94,6 +98,41 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     } catch (error) {
       console.error('❌ Failed to refresh plants:', error);
     }
+  };
+
+  const handleDeletePlant = (plant: Plant) => {
+    setPlantToDelete(plant);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeletePlant = async () => {
+    if (!plantToDelete) return;
+
+    console.log('🗑️ Attempting to delete plant:', {
+      id: plantToDelete.id,
+      name: plantToDelete.name,
+      species: plantToDelete.species
+    });
+
+    setIsDeletingPlant(true);
+    try {
+      await gardenService.deletePlant(plantToDelete.id);
+      // Remove the plant from the local state
+      setPlants(prevPlants => prevPlants.filter(p => p.id !== plantToDelete.id));
+      console.log('🗑️ Plant deleted successfully:', plantToDelete.name);
+    } catch (error) {
+      console.error('❌ Failed to delete plant:', error);
+      // You might want to show an error toast here
+    } finally {
+      setIsDeletingPlant(false);
+      setShowDeleteDialog(false);
+      setPlantToDelete(null);
+    }
+  };
+
+  const cancelDeletePlant = () => {
+    setShowDeleteDialog(false);
+    setPlantToDelete(null);
   };
 
   // Mock data for achievements and leaderboard (these would also come from backend eventually)
@@ -378,7 +417,18 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 {/* Scroll container */}
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 pt-6 snap-x snap-mandatory scroll-smooth">
                   {plants.map((plant) => (
-                    <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2">
+                    <Card key={plant.id} className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2 group relative">
+                      {/* Delete button - appears on hover */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePlant(plant);
+                        }}
+                        className="absolute top-2 right-2 z-10 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                        title={`Delete ${plant.name}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                       <CardHeader className="pb-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -554,6 +604,66 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && plantToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white shadow-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl text-red-600 flex items-center gap-2">
+                <X className="w-5 h-5" />
+                Delete Plant
+              </CardTitle>
+              <CardDescription>
+                Are you sure you want to remove <strong>{plantToDelete.name}</strong> from your garden? This action cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img 
+                    src={plantIconService.getIconAsset(plantToDelete.icon || 'default')} 
+                    alt={plantToDelete.name}
+                    className="w-6 h-6 object-contain"
+                  />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">{plantToDelete.name}</p>
+                  <p className="text-sm text-gray-600">{plantToDelete.species}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={cancelDeletePlant}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isDeletingPlant}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeletePlant}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  disabled={isDeletingPlant}
+                >
+                  {isDeletingPlant ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-4 h-4 mr-2" />
+                      Delete Plant
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

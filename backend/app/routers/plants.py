@@ -122,6 +122,124 @@ def add_to_garden(
             detail="Failed to add plant to garden. Please try again."
         )
 
+@router.delete("/{plant_id}", response_model=schemas.DeletePlantResponse)
+def delete_plant(
+    plant_id: str,
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """Delete a plant from user's garden"""
+    print(f"🗑️ DELETE request for plant_id: {plant_id}")
+    print(f"🔍 User info: {user_info}")
+    
+    # Lookup user
+    user = db.query(models.User).filter(
+        models.User.cognito_user_id == user_info["cognito_user_id"]
+    ).first()
+    
+    if not user:
+        print(f"❌ User not found for cognito_user_id: {user_info['cognito_user_id']}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    print(f"✅ User found: {user.email} (ID: {user.id})")
+    
+    # Debug: List all plants for this user
+    user_plants = db.query(models.Plant).filter(
+        models.Plant.user_id == user.id
+    ).all()
+    print(f"🌱 User has {len(user_plants)} plants:")
+    for p in user_plants:
+        print(f"  - {p.id}: {p.name} ({p.species})")
+    
+    # First, check if plant exists at all
+    plant_exists = db.query(models.Plant).filter(
+        models.Plant.id == plant_id
+    ).first()
+    
+    if not plant_exists:
+        print(f"❌ Plant with ID {plant_id} does not exist in database")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Plant with ID {plant_id} not found"
+        )
+    
+    print(f"🌱 Plant exists: {plant_exists.name} (Owner ID: {plant_exists.user_id})")
+    
+    # Find the plant with user ownership check
+    plant = db.query(models.Plant).filter(
+        models.Plant.id == plant_id,
+        models.Plant.user_id == user.id  # Ensure user owns the plant
+    ).first()
+    
+    if not plant:
+        print(f"❌ Plant {plant_id} exists but user {user.id} doesn't own it (actual owner: {plant_exists.user_id})")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plant not found or you don't have permission to delete it"
+        )
+    
+    print(f"✅ User owns the plant, proceeding with deletion")
+    
+    try:
+        plant_name = plant.name  # Store name for response message
+        plant_id_to_delete = plant.id  # Store ID for logging
+        
+        print(f"🗑️ About to delete plant: {plant_name} (ID: {plant_id_to_delete})")
+        
+        # First, handle related records to avoid foreign key constraint issues
+        
+        # 1. Delete related health reports
+        health_reports = db.query(models.HealthReport).filter(
+            models.HealthReport.plant_id == plant_id_to_delete
+        ).all()
+        for report in health_reports:
+            db.delete(report)
+        print(f"🗑️ Deleted {len(health_reports)} health reports")
+        
+        # 2. Set plant_id to NULL in scan_sessions (since it's nullable)
+        scan_sessions = db.query(models.ScanSession).filter(
+            models.ScanSession.plant_id == plant_id_to_delete
+        ).all()
+        for session in scan_sessions:
+            session.plant_id = None
+        print(f"🗑️ Nullified plant_id in {len(scan_sessions)} scan sessions")
+        
+        # 3. Now delete the plant
+        db.delete(plant)
+        print(f"🗑️ Plant marked for deletion in session")
+        
+        # Commit the transaction
+        db.commit()
+        print(f"🗑️ Database transaction committed")
+        
+        # Verify deletion by trying to query the plant again
+        deleted_plant_check = db.query(models.Plant).filter(
+            models.Plant.id == plant_id_to_delete
+        ).first()
+        
+        if deleted_plant_check is None:
+            print(f"✅ Plant successfully deleted from database")
+        else:
+            print(f"❌ WARNING: Plant still exists in database after deletion!")
+            print(f"❌ Plant found: {deleted_plant_check.name} (ID: {deleted_plant_check.id})")
+        
+        return schemas.DeletePlantResponse(
+            success=True,
+            message=f"Successfully removed '{plant_name}' from your garden!",
+            deleted_plant_id=plant_id
+        )
+        
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error deleting plant: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete plant. Please try again."
+        )
+
 # def upload_plant_image(base64_image: str, user_id: str) -> str:
 #     """Upload plant image to S3 and return the URL"""
 #     try:

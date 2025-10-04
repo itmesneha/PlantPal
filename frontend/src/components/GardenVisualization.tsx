@@ -90,15 +90,28 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
                         />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="text-center">
-                        <p className="font-medium">{plant.name}</p>
-                        <p className="text-sm text-muted-foreground">{plant.species}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={plant.healthScore >= 80 ? 'default' : 'secondary'}>
-                            {Math.round(plant.healthScore)}/100
+                    <TooltipContent 
+                      className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-xl rounded-lg p-2 opacity-100 backdrop-blur-none"
+                      sideOffset={8}
+                      hideWhenDetached={true}
+                    >
+                      <div className="text-center space-y-1">
+                        <p className="font-bold text-green-800 text-sm">{plant.name}</p>
+                        <p className="text-xs text-green-600 font-medium">{plant.species}</p>
+                        <div className="flex items-center justify-center gap-2 mt-1">
+                          <Badge 
+                            variant={plant.healthScore >= 80 ? 'default' : 'secondary'}
+                            className={`px-2 py-0.5 rounded-full font-medium shadow-sm text-xs ${
+                              plant.healthScore >= 80 
+                                ? 'bg-green-100 text-green-800 border-green-300' 
+                                : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                            }`}
+                          >
+                            💚 {Math.round(plant.healthScore)}/100
                           </Badge>
-                          <span className="text-sm">🔥 {plant.streak} days</span>
+                          <span className="text-xs font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-200">
+                            🔥 {plant.streak} days
+                          </span>
                         </div>
                       </div>
                     </TooltipContent>
@@ -116,8 +129,14 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
                     <span className="text-2xl text-muted-foreground">+</span>
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add a new plant</p>
+                <TooltipContent 
+                  className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-xl rounded-lg p-2 opacity-100 backdrop-blur-none"
+                  sideOffset={8}
+                  hideWhenDetached={true}
+                >
+                  <p className="text-blue-800 font-medium flex items-center gap-1 text-xs">
+                    ✨ Add a new plant
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

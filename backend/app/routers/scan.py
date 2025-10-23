@@ -339,7 +339,7 @@ async def query_plantnet_api_async(image_data: bytes) -> dict:
 
 async def query_huggingface_model_async(image_data: bytes) -> dict:
     """Query the Hugging Face plant disease detection model (async)"""
-    API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    API_URL = "https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
     
     headers = {
         "Authorization": f"Bearer {os.getenv('HF_TOKEN')}",
@@ -390,7 +390,7 @@ def query_plantnet_api(image_data: bytes) -> dict:
 
 def query_huggingface_model(image_data: bytes, max_retries: int = 2) -> dict:
     """Query the Hugging Face plant disease detection model with retry logic"""
-    API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    API_URL = "https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
     
     headers = {
         "Authorization": f"Bearer {os.getenv('HF_TOKEN')}",

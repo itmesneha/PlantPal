@@ -5,7 +5,7 @@ Handles achievement progress tracking, unlocking, and retrieval
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func 
 from typing import List, Optional
 from datetime import datetime, timedelta
 

@@ -631,7 +631,7 @@ async def parse_disease_predictions_async(hf_response: List[dict], image_data: b
     confidence = top_prediction.get('score', 0.0)
     
     # Determine if plant is healthy and has disease (only if confidence > 50%)
-    has_disease = 'healthy' not in prediction_label and confidence > 0.15  # Try prams with more tolerance
+    has_disease = 'healthy' not in prediction_label and confidence > 0.50
     is_healthy = not has_disease
     
     if is_healthy:

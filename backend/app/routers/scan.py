@@ -340,6 +340,7 @@ async def query_plantnet_api_async(image_data: bytes) -> dict:
 async def query_huggingface_model_async(image_data: bytes) -> dict:
     """Query the Hugging Face plant disease detection model (async)"""
     API_URL = "https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    # API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
     
     headers = {
         "Authorization": f"Bearer {os.getenv('HF_TOKEN')}",
@@ -628,7 +629,7 @@ async def parse_disease_predictions_async(hf_response: List[dict], image_data: b
     confidence = top_prediction.get('score', 0.0)
     
     # Determine if plant is healthy and has disease (only if confidence > 50%)
-    has_disease = 'healthy' not in prediction_label and confidence > 0.5
+    has_disease = 'healthy' not in prediction_label and confidence > 0.15  # Try prams with more tolerance
     is_healthy = not has_disease
     
     if is_healthy:

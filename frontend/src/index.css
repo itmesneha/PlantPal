@@ -136,3 +136,72 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+.achievement-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.dark .achievement-card {
+  border-color: #374151;
+}
+
+.achievement-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.12), 0 10px 10px -5px rgba(0, 0, 0, 0.06);
+}
+
+/* Completed achievement styling */
+.achievement-card.completed {
+  background-color: #f0fdf4;
+  border-color: #4ade80;
+}
+
+.dark .achievement-card.completed {
+  background-color: #0f2a0f;
+  border-color: #4ade80;
+}
+
+/* Achievement title text */
+.achievement-title {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.dark .achievement-title {
+  color: #f3f4f6;
+}
+
+/* Achievement description text */
+.achievement-description {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.dark .achievement-description {
+  color: #9ca3af;
+}
+
+/* Achievement points (darker gold) */
+.achievement-points {
+  color: #b45309;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.dark .achievement-points {
+  color: #fcd34d;
+}
+
+/* Achievement completion date text */
+.achievement-date {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.dark .achievement-date {
+  color: #6b7280;
+}

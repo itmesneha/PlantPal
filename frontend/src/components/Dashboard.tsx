@@ -9,6 +9,8 @@ import { plantsService } from '../services/plantsService';
 import { plantIconService } from '../services/plantIconService';
 import { gardenService } from '../services/gardenService';
 import { scanService } from '../services/scanService';
+import { achievementService, AchievementStats, UserAchievement } from '../services/achievementService';
+import { AchievementCard } from './AchievementCard';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
 import plantUserIcon from '../assets/plant_user.png';
@@ -81,6 +83,11 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [plantHealthInfo, setPlantHealthInfo] = useState<PlantHealthInfo | null>(null);
   const [isLoadingHealthInfo, setIsLoadingHealthInfo] = useState(false);
   const [isCareNotesExpanded, setIsCareNotesExpanded] = useState(false);
+  
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
+  const [achievementStats, setAchievementStats] = useState<AchievementStats | null>(null);
+  const [achievementsLoading, setAchievementsLoading] = useState(true);
+  const [achievementsError, setAchievementsError] = useState('');
 
   // Fetch user plants on component mount
   useEffect(() => {
@@ -105,6 +112,37 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     };
 
     fetchUserPlants();
+  }, []);
+
+  // Fetch Achievements
+  useEffect(() => {
+    const fetchAchievements = async () => {
+      try {
+        setAchievementsLoading(true);
+        setAchievementsError('');
+
+        console.log('🏆 Fetching achievements for dashboard...');
+        // Fetch user's achievements and stats
+        const [userAchievementsList, stats] = await Promise.all([
+          achievementService.getUserAchievements(),
+          achievementService.getAchievementStats()
+        ]);
+
+        setUserAchievements(userAchievementsList);
+        setAchievementStats(stats);
+        console.log('✅ Achievements loaded:', userAchievementsList);
+        console.log('✅ Achievement stats loaded:', stats);
+        // Check streaks on load
+        await achievementService.checkStreaks();
+      } catch (error) {
+        console.error('Failed to fetch achievements:', error);
+        setAchievementsError('Failed to load achievements');
+      } finally {
+        setAchievementsLoading(false);
+      }
+    };
+
+    fetchAchievements(); // Call without user dependency check
   }, []);
 
   // Function to refresh plants (can be called after adding a new plant)
@@ -245,45 +283,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     onScanPlant(plant.id); // Pass plant ID to rescan existing plant
   };
 
-  // Mock data for achievements and leaderboard (these would also come from backend eventually)
-  const achievements: Achievement[] = [
-    {
-      id: '1',
-      name: 'Plant Doctor',
-      description: 'Successfully treat 5 diseased plants',
-      icon: '🩺',
-      earned: false,
-      progress: 2,
-      requirement: 5
-    },
-    {
-      id: '2',
-      name: 'Green Thumb',
-      description: 'Keep all plants healthy for 30 days',
-      icon: '👍',
-      earned: false,
-      progress: 15,
-      requirement: 30
-    },
-    {
-      id: '3',
-      name: 'Plant Collector',
-      description: 'Add 10 plants to your garden',
-      icon: '🌱',
-      earned: false,
-      progress: 2,
-      requirement: 10
-    },
-    {
-      id: '4',
-      name: 'Daily Gardener',
-      description: 'Check in daily for 7 days straight',
-      icon: '📅',
-      earned: true,
-      progress: 7,
-      requirement: 7
-    }
-  ];
+  // Mock data for leaderboard (these would also come from backend eventually)
 
   const leaderboard = [
     { rank: 1, name: 'Emma Green', score: 2847, plants: 12 },
@@ -296,7 +296,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const totalHealthScore = plants.length > 0
     ? plants.reduce((sum, plant) => sum + plant.healthScore, 0) / plants.length
     : 0;
-  const earnedAchievements = achievements.filter(a => a.earned).length;
   const bestStreak = plants.length > 0 ? Math.max(...plants.map(p => p.streak)) : 0;
 
   return (
@@ -377,7 +376,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   alt="icon"
                   className="inline-block"
                 />
-                {/* <TrendingUp className="w-6 h-6 text-blue-600" /> */}
               </div>
             </div>
           </CardContent>
@@ -388,7 +386,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Achievements</p>
-                <p className="text-3xl font-bold text-yellow-600">{earnedAchievements}</p>
+                <p className="text-3xl font-bold text-yellow-600">{achievementStats?.completed ?? 0}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
@@ -398,7 +396,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   alt="icon"
                   className="inline-block"
                 />
-                {/* <Trophy className="w-6 h-6 text-yellow-600" /> */}
               </div>
             </div>
           </CardContent>
@@ -419,7 +416,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   alt="icon"
                   className="inline-block"
                 />
-                {/* <Flame className="w-6 h-6 text-orange-600" /> */}
               </div>
             </div>
           </CardContent>
@@ -534,17 +530,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                     >
                       {/* Action buttons - appear on hover */}
                       <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        {/* Edit button */}
-                        {/* <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPlant(plant);
-                          }}
-                          className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md"
-                          title={`Edit ${plant.name}`}
-                        >
-                          <Edit3 className="w-3 h-3" />
-                        </button> */}
                         {/* Delete button */}
                         <button
                           onClick={(e) => {
@@ -609,7 +594,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       </CardContent>
                     </Card>
                   ))}
-
                   {/* Add Plant Card - Always at the end */}
                   <Card className="border-2 border-dashed border-green-300 card-hover flex-shrink-0 w-80 snap-start mt-2">
                     <CardContent className="flex flex-col items-center justify-center h-full min-h-[250px] space-y-4 p-6">
@@ -658,32 +642,61 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       )}
 
       {activeTab === 'achievements' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {achievements.map((achievement) => (
-            <Card key={achievement.id} className={achievement.earned ? 'border-green-200 bg-green-50/50' : ''}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">{achievement.icon}</div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{achievement.name}</CardTitle>
-                    <CardDescription>{achievement.description}</CardDescription>
-                  </div>
-                  {achievement.earned && (
-                    <Badge className="bg-green-100 text-green-800">Earned!</Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span>{achievement.progress}/{achievement.requirement}</span>
-                  </div>
-                  <Progress value={(achievement.progress / achievement.requirement) * 100} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div>
+          {/* Achievement Loading (ADDED) */}
+          {achievementsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading achievements...</p>
+            </div>
+          ) : achievementsError ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <p className="text-red-700">❌ {achievementsError}</p>
+            </div>
+          ) : (
+            // Display all possible achievements with user's progress - completed and in-progress
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* {userAchievements.map((userAchievement) => (
+                <Card key={userAchievement.id} className={userAchievement.is_completed ? 'border-green-200 bg-green-50/50' : ''}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{userAchievement.achievement?.icon || '🏆'}</div>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{userAchievement.achievement?.name}</CardTitle>
+                        <CardDescription>{userAchievement.achievement?.description}</CardDescription>
+                      </div>
+                      {userAchievement.is_completed && (
+                        <Badge className="bg-green-100 text-green-800">Earned!</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{userAchievement.current_progress}/{userAchievement.achievement?.requirement_value}</span>
+                      </div>
+                      <Progress value={(userAchievement.current_progress / (userAchievement.achievement?.requirement_value || 1)) * 100} />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))} */
+                userAchievements
+                .sort((a, b) => {
+                  if (a.is_completed !== b.is_completed) {
+                    return a.is_completed ? 1 : -1;
+                  }
+                  return 0;
+                })
+                .map((userAchievement) => (
+                  <AchievementCard 
+                    key={userAchievement.id} 
+                    userAchievement={userAchievement}
+                  />
+                ))
+              }
+            </div>
+          )}
         </div>
       )}
 
@@ -794,10 +807,8 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       >
                         <Edit3 className="text-green-500" />
                       </Button>
-
                     </div>
                   )}
-                  {/* <CardDescription className="text-lg text-gray-600">{selectedPlantForDetails.species}</CardDescription> */}
                 </div>
               </div>
             </CardHeader>
@@ -830,7 +841,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </div>
 
               {/* Plant Information */}
-              {/* <div className="grid grid-cols-1 gap-4"> */}
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4" />
@@ -838,7 +848,6 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 </h4>
                 <p className="text-blue-700">{selectedPlantForDetails.species}</p>
               </div>
-              {/* </div> */}
 
               {/* Disease Status */}
               <div className={`p-4 rounded-lg ${isLoadingHealthInfo

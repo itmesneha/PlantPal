@@ -5,6 +5,7 @@ from typing import List
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user_info
+from app.routers.achievements import initialize_user_achievements
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -31,6 +32,7 @@ def get_current_user(
             db.add(user)
             db.commit()
             db.refresh(user)
+            initialize_user_achievements(user.id, db)
             print(f"✅ Created new user from JWT: {user.name} ({user.email})")
         
         return user
@@ -62,6 +64,7 @@ def create_user(
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    initialize_user_achievements(db_user.id, db)
     print(f"✅ Created new user via API: {db_user.name} ({db_user.email})")
     
     return db_user

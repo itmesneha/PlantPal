@@ -121,3 +121,17 @@ class PlantSpecies(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class UserCoupon(Base):
+    __tablename__ = "user_coupons"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    store_id = Column(String, nullable=False)
+    store_name = Column(String, nullable=False)
+    discount_percent = Column(Integer, nullable=False)
+    cost_coins = Column(Integer, nullable=False)
+    code = Column(String, nullable=False, unique=True)
+    redeemed = Column(Boolean, default=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

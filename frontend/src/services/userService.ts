@@ -18,6 +18,21 @@ export interface UserCreate {
   name: string;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  name: string;
+  email: string;
+  score: number;
+  total_plants: number;
+  achievements_completed: number;
+}
+
+export interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[];
+  current_user_rank: number | null;
+}
+
 class UserService {
   private getAuthToken = async (): Promise<string> => {
     try {
@@ -113,6 +128,31 @@ class UserService {
       return user;
     } catch (error) {
       console.error('User sync failed:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Get leaderboard data
+   */
+  getLeaderboard = async (limit: number = 10): Promise<LeaderboardResponse> => {
+    try {
+      const response = await this.makeAuthenticatedRequest(
+        `${API_BASE_URL}/api/v1/leaderboard?limit=${limit}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to get leaderboard: ${response.statusText}`);
+      }
+
+      const leaderboardData = await response.json();
+      console.log('✅ Leaderboard fetched:', leaderboardData);
+      return leaderboardData;
+    } catch (error) {
+      console.error('Failed to get leaderboard:', error);
       throw error;
     }
   };

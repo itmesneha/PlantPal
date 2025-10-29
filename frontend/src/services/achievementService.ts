@@ -32,6 +32,7 @@ export interface AchievementStats {
   in_progress: number;
   total_points_earned: number;
   completion_percentage: number;
+  current_streak: number;
 }
 
 export interface UserStreak {

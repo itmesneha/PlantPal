@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Flame, Users, LogOut, Loader2, X, Camera, Calendar, FileText, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
 import { GardenVisualization } from './GardenVisualization';
+import { Storefront } from './Storefront';
 import { plantsService } from '../services/plantsService';
 import { plantIconService } from '../services/plantIconService';
 import { gardenService } from '../services/gardenService';
 import { scanService } from '../services/scanService';
+import { storefrontService, CoinBalance } from '../services/storefrontService';
 import { achievementService, AchievementStats, UserAchievement } from '../services/achievementService';
 import { AchievementCard } from './AchievementCard';
+import { userService, LeaderboardEntry } from '../services/userService';
 import plantScanIcon from '../assets/plant_scan_icon.png';
 import fireIcon from '../assets/fire.png';
 import plantUserIcon from '../assets/plant_user.png';
@@ -68,7 +71,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
-  const [activeTab, setActiveTab] = useState<'plants' | 'achievements' | 'leaderboard'>('plants');
+  const [activeTab, setActiveTab] = useState<'plants' | 'achievements' | 'leaderboard' | 'storefront'>('plants');
   const [plants, setPlants] = useState<Plant[]>([]);
   const [isLoadingPlants, setIsLoadingPlants] = useState(true);
   const [plantsError, setPlantsError] = useState<string>('');
@@ -83,11 +86,29 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [plantHealthInfo, setPlantHealthInfo] = useState<PlantHealthInfo | null>(null);
   const [isLoadingHealthInfo, setIsLoadingHealthInfo] = useState(false);
   const [isCareNotesExpanded, setIsCareNotesExpanded] = useState(false);
-  
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [achievementStats, setAchievementStats] = useState<AchievementStats | null>(null);
   const [achievementsLoading, setAchievementsLoading] = useState(true);
   const [achievementsError, setAchievementsError] = useState('');
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
+  const [coinBalance, setCoinBalance] = useState<CoinBalance | null>(null);
+
+  const refreshCoinBalance = useCallback(async () => {
+    try {
+      const balance = await storefrontService.getBalance();
+      setCoinBalance(balance);
+      return balance;
+    } catch (e) {
+      console.error('Failed to fetch coin balance', e);
+      setCoinBalance(null);
+      return null;
+    }
+  }, []);
+
+  const handleBalanceChange = useCallback((balance: CoinBalance | null) => {
+    setCoinBalance(balance);
+  }, []);
 
   // Fetch user plants on component mount
   useEffect(() => {
@@ -134,6 +155,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         console.log('✅ Achievement stats loaded:', stats);
         // Check streaks on load
         await achievementService.checkStreaks();
+        await refreshCoinBalance();
       } catch (error) {
         console.error('Failed to fetch achievements:', error);
         setAchievementsError('Failed to load achievements');
@@ -143,7 +165,33 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     };
 
     fetchAchievements(); // Call without user dependency check
-  }, []);
+  }, [refreshCoinBalance]);
+
+  // Fetch leaderboard when leaderboard tab is active
+  useEffect(() => {
+    if (activeTab === 'leaderboard') {
+      const fetchLeaderboard = async () => {
+        try {
+          setIsLoadingLeaderboard(true);
+          console.log('🏆 Fetching leaderboard data...');
+          const leaderboardData = await userService.getLeaderboard(10);
+          setLeaderboard(leaderboardData.leaderboard);
+          console.log('✅ Leaderboard loaded:', leaderboardData);
+        } catch (error) {
+          console.error('❌ Failed to fetch leaderboard:', error);
+          setLeaderboard([]);
+        } finally {
+          setIsLoadingLeaderboard(false);
+        }
+      };
+      fetchLeaderboard();
+    }
+  }, [activeTab]);
+
+  // Fetch coin balance (for Coins Remaining card)
+  useEffect(() => {
+    refreshCoinBalance();
+  }, [refreshCoinBalance]);
 
   // Function to refresh plants (can be called after adding a new plant)
   const refreshPlants = async () => {
@@ -285,18 +333,12 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
 
   // Mock data for leaderboard (these would also come from backend eventually)
 
-  const leaderboard = [
-    { rank: 1, name: 'Emma Green', score: 2847, plants: 12 },
-    { rank: 2, name: 'John Plant', score: 2156, plants: 8 },
-    { rank: 3, name: user.name, score: 1890, plants: plants.length },
-    { rank: 4, name: 'Sarah Bloom', score: 1654, plants: 6 },
-    { rank: 5, name: 'Mike Garden', score: 1432, plants: 5 }
-  ];
 
   const totalHealthScore = plants.length > 0
     ? plants.reduce((sum, plant) => sum + plant.healthScore, 0) / plants.length
     : 0;
-  const bestStreak = plants.length > 0 ? Math.max(...plants.map(p => p.streak)) : 0;
+  const bestStreak = achievementStats?.current_streak ??
+    (plants.length > 0 ? Math.max(...plants.map(p => p.streak)) : 0);
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -340,7 +382,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <Card className="card-hover plant-card border-green-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -420,6 +462,21 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Coins Remaining */}
+        <Card className="card-hover plant-card border-yellow-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Coins Remaining</p>
+                <p className="text-3xl font-bold text-yellow-600">{coinBalance?.coins_remaining ?? '—'}</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-2xl">🪙</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tab Navigation */}
@@ -471,6 +528,16 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             className="inline-block"
           />
           Leaderboard
+        </button>
+        <button
+          onClick={() => setActiveTab('storefront')}
+          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'storefront'
+            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+            }`}
+        >
+          <span className="inline-block">🛍️</span>
+          Storefront
         </button>
       </div>
 
@@ -656,32 +723,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           ) : (
             // Display all possible achievements with user's progress - completed and in-progress
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* {userAchievements.map((userAchievement) => (
-                <Card key={userAchievement.id} className={userAchievement.is_completed ? 'border-green-200 bg-green-50/50' : ''}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{userAchievement.achievement?.icon || '🏆'}</div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{userAchievement.achievement?.name}</CardTitle>
-                        <CardDescription>{userAchievement.achievement?.description}</CardDescription>
-                      </div>
-                      {userAchievement.is_completed && (
-                        <Badge className="bg-green-100 text-green-800">Earned!</Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{userAchievement.current_progress}/{userAchievement.achievement?.requirement_value}</span>
-                      </div>
-                      <Progress value={(userAchievement.current_progress / (userAchievement.achievement?.requirement_value || 1)) * 100} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))} */
-                userAchievements
+              {userAchievements
                 .sort((a, b) => {
                   if (a.is_completed !== b.is_completed) {
                     return a.is_completed ? 1 : -1;
@@ -712,39 +754,58 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {leaderboard.map((entry) => (
-                <div
-                  key={entry.rank}
-                  className={`flex items-center justify-between p-3 rounded-lg ${entry.name === user.name ? 'bg-primary/10 border' : 'bg-muted/50'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${entry.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
-                      entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
-                        entry.rank === 3 ? 'bg-orange-100 text-orange-800' :
-                          'bg-muted text-muted-foreground'
-                      }`}>
-                      #{entry.rank}
+            {isLoadingLeaderboard ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+              </div>
+            ) : leaderboard.length === 0 ? (
+              <div className="text-center p-8 text-muted-foreground">
+                <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No users found on the leaderboard yet</p>
+                <p className="text-sm">Start earning achievements to climb the ranks!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {leaderboard.map((entry) => (
+                  <div
+                    key={entry.user_id}
+                    className={`flex items-center justify-between p-3 rounded-lg ${entry.user_id === user.id ? 'bg-primary/10 border' : 'bg-muted/50'
+                      }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${entry.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
+                        entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
+                          entry.rank === 3 ? 'bg-orange-100 text-orange-800' :
+                            'bg-muted text-muted-foreground'
+                        }`}>
+                        #{entry.rank}
+                      </div>
+                      <div>
+                        <p className={entry.user_id === user.id ? 'font-medium' : ''}>
+                          {entry.name} {entry.user_id === user.id && '(You)'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {entry.total_plants} plants • {entry.achievements_completed} achievements
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className={entry.name === user.name ? 'font-medium' : ''}>
-                        {entry.name} {entry.name === user.name && '(You)'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.plants} plants
-                      </p>
+                    <div className="text-right">
+                      <p className="font-medium">{entry.score}</p>
+                      <p className="text-sm text-muted-foreground">points</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">{entry.score}</p>
-                    <p className="text-sm text-muted-foreground">points</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
+      )}
+
+      {activeTab === 'storefront' && (
+        <div>
+          {/* Storefront */}
+          <Storefront onBalanceChange={handleBalanceChange} />
+        </div>
       )}
 
       {/* Plant Details Modal */}

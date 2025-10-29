@@ -304,12 +304,15 @@ def get_achievement_stats(
             if ua.is_completed and ua.achievement:
                 total_points += ua.achievement.points_awarded
         
+        current_streak = calculate_user_streak(user.id, db)
+
         return {
             "total_achievements": total,
             "completed": completed,
             "in_progress": in_progress,
             "total_points_earned": total_points,
-            "completion_percentage": int((completed / total * 100) if total > 0 else 0)
+            "completion_percentage": int((completed / total * 100) if total > 0 else 0),
+            "current_streak": current_streak
         }
         
     except HTTPException:

@@ -65,8 +65,12 @@ export function AchievementCard({ userAchievement }: AchievementCardProps) {
 
             {/* Points and Completion Date */}
             <div className="flex items-center justify-between mt-3 text-xs">
-                <span className="achievement-points">
+                <span className="achievement-points flex items-center gap-2">
                 {achievement.points_awarded} pts
+                <span className="inline-flex items-center gap-1 bg-yellow-50 border border-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
+                    <span role="img" aria-label="coin">🪙</span>
+                    +20 coins on unlock
+                </span>
                 </span>
                 {is_completed && completed_at && (
                 <span className="achievement-date">

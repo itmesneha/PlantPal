@@ -1004,8 +1004,27 @@ async def scan_plant(
             # Update streak
             user_id = user.id
             
-            # Calculate and update streak achievements
+            # Calculate current streak across all scans
             current_streak = calculate_user_streak(user_id, db)
+
+            # Persist streak metadata on the scanned plant so dashboard/storefront stay in sync
+            if plant_id:
+                try:
+                    plant_for_update = existing_plant or db.query(models.Plant).filter(
+                        models.Plant.id == plant_id,
+                        models.Plant.user_id == user_id
+                    ).first()
+                    if plant_for_update:
+                        plant_for_update.streak_days = current_streak
+                        plant_for_update.last_check_in = datetime.datetime.utcnow()
+                        db.add(plant_for_update)
+                        db.commit()
+                        db.refresh(plant_for_update)
+                except Exception as plant_update_error:
+                    print(f"⚠️ Failed to persist streak metadata on plant {plant_id}: {plant_update_error}")
+                    db.rollback()
+
+            # Calculate and update streak achievements
             newly_completed_streak = update_achievement_progress(
                 user_id,
                 "streak",

@@ -45,6 +45,7 @@ class AddToGardenRequest(BaseModel):
 class PlantUpdate(BaseModel):
     name: Optional[str] = None
     current_health_score: Optional[float] = None
+    plant_icon: Optional[str] = None
 
 class Plant(PlantBase):
     id: str

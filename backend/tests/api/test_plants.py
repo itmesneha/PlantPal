@@ -178,9 +178,32 @@ class TestPlantEndpoints:
         db_session.commit()
         db_session.refresh(unique_user)
         
-        # Initialize achievements for the test user
-        from app.routers.achievements import initialize_user_achievements
-        initialize_user_achievements(unique_user.id, db_session)
+        # Create test achievements first
+        test_achievements = [
+            models.Achievement(
+                id="test-green-thumb",
+                name="Green Thumb",
+                description="Add your first plant to the garden",
+                achievement_type="plants_count",
+                requirement_value=1,
+                points_awarded=10,
+                icon="👍",
+                is_active=True
+            )
+        ]
+        db_session.add_all(test_achievements)
+        db_session.commit()
+        
+        # Initialize achievements for the test user manually
+        for achievement in test_achievements:
+            user_achievement = models.UserAchievement(
+                user_id=unique_user.id,
+                achievement_id=achievement.id,
+                current_progress=0,
+                is_completed=False
+            )
+            db_session.add(user_achievement)
+        db_session.commit()
         
         # Mock authentication to return our test user
         def mock_get_current_user_info():
@@ -318,7 +341,7 @@ class TestPlantEndpoints:
         try:
             update_data = {
                 "name": "Updated Plant Name",
-                "plant_icon": "🌺"
+                "plant_icon": "🌱"
             }
             
             response = client.put(f"/api/v1/plants/{plant.id}", json=update_data)
@@ -326,7 +349,7 @@ class TestPlantEndpoints:
             
             data = response.json()
             assert data["name"] == "Updated Plant Name"
-            assert data["plant_icon"] == "🌺"
+            assert data["plant_icon"] == "🌱"
             assert data["id"] == plant.id
         finally:
             # Clean up

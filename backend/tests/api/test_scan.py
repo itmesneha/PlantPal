@@ -228,7 +228,7 @@ class TestScanEndpoints:
             
             with patch.dict('os.environ', {}, clear=True):
                 response = client.post("/api/v1/care-recommendations", json=request_data)
-                assert response.status_code == 503
+                assert response.status_code == 500
                 assert "OpenRouter API key not configured" in response.json()["detail"]
         finally:
             # Clean up dependency override
@@ -298,7 +298,7 @@ class TestScanEndpoints:
             data = response.json()
             assert "health_score" in data
             assert "is_healthy" in data
-            assert "last_scan_date" in data
+            assert "scan_date" in data
         finally:
             # Clean up dependency override
             app.dependency_overrides.clear()

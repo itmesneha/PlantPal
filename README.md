@@ -214,16 +214,94 @@ PlantPal/
 └── .github/workflows/    # CI/CD pipelines
 ```
 
-### Running Tests
+### 🧪 Testing
+
+PlantPal includes comprehensive test suites for both backend and frontend components.
+
+#### Backend Tests (Python/FastAPI)
+
+The backend uses **pytest** with coverage reporting and supports multiple test categories.
+
 ```bash
-# Backend tests
+# Navigate to backend directory
 cd backend
+
+# Install test dependencies (if not already installed)
+pip install -r requirements.txt
+
+# Run all tests
 python -m pytest
 
-# Frontend tests
-cd frontend
-npm test
+# Run tests with verbose output
+python -m pytest -v
+
+# Run tests with coverage report
+python -m pytest --cov=app --cov-report=term-missing
+
+# Generate HTML coverage report
+python -m pytest --cov=app --cov-report=html
+# View report: open htmlcov/index.html
 ```
+
+**Test Categories:**
+```bash
+# Run specific test categories
+python -m pytest -m unit          # Unit tests only
+python -m pytest -m integration   # Integration tests only
+python -m pytest -m api          # API endpoint tests only
+
+# Run specific test files
+python -m pytest tests/unit/test_models.py     # Database model tests
+python -m pytest tests/unit/test_schemas.py    # Schema validation tests
+```
+
+**Current Backend Test Coverage:**
+- ✅ **Models**: 100% coverage (User, Plant, PlantScan, Achievement)
+- ✅ **Schemas**: 99% coverage (Pydantic validation)
+- ⚠️ **Auth**: 39% coverage (Authentication logic)
+- ⚠️ **API Routes**: 8-42% coverage (Needs more integration tests)
+
+#### Frontend Tests (React/TypeScript)
+
+The frontend uses **Jest** and **React Testing Library** for component testing.
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Run tests (non-watch mode)
+npm test -- --watchAll=false
+
+# Run tests in watch mode (for development)
+npm test
+
+# Run tests with coverage report
+npm test -- --coverage --watchAll=false
+
+# Run tests in CI mode (single run)
+CI=true npm test
+```
+
+**Current Frontend Test Status:**
+- ✅ Basic test framework configured
+- ✅ Jest and React Testing Library setup
+- ⚠️ Limited component tests (placeholder tests only)
+- ❌ No AWS Amplify integration tests yet
+
+#### Quick Test Commands
+
+```bash
+# Test everything quickly
+cd backend && python -m pytest && cd ../frontend && npm test -- --watchAll=false
+
+# Full test suite with coverage
+cd backend && python -m pytest --cov=app --cov-report=html && cd ../frontend && npm test -- --coverage --watchAll=false
+```
+
+#### Test Configuration Files
+
+- **Backend**: `backend/pytest.ini` - Pytest configuration with coverage settings
+- **Frontend**: `frontend/package.json` - Jest configuration via react-scripts
 
 ## 🤝 Contributing
 

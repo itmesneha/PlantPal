@@ -42,7 +42,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [scanResult, setScanResult] = useState<PlantScanResult | null>(null);
   const [originalImageFile, setOriginalImageFile] = useState<File | null>(null); // Store original image
-  const [plantStreak] = useState(14); // Mock streak
+  const [plantStreak, setPlantStreak] = useState<number>(0); // User's current streak
   const [rescanPlantId, setRescanPlantId] = useState<string | null>(null); // Track plant being rescanned
 
   // Check if user is already authenticated on app load
@@ -59,6 +59,8 @@ function App() {
         try {
           const backendUser = await userService.syncUserAfterAuth();
           setUser(backendUser);
+          // Fetch user's current streak
+          await fetchUserStreak();
           setCurrentState('dashboard');
         } catch (backendError) {
           console.error('Backend sync failed!, but user is authenticated:', backendError);
@@ -75,11 +77,24 @@ function App() {
     }
   };
 
+  const fetchUserStreak = async () => {
+    try {
+      const stats = await userService.getUserStats();
+      setPlantStreak(stats.current_streak);
+      console.log('✅ User streak fetched:', stats.current_streak);
+    } catch (error) {
+      console.error('Failed to fetch user streak:', error);
+      // Keep default value of 0 if fetch fails
+    }
+  };
+
   const handleAuthSuccess = async (userData: { id: string; name: string; email: string; }) => {
     try {
       // Sync user with backend after authentication
       const backendUser = await userService.syncUserAfterAuth();
       setUser(backendUser);
+      // Fetch user's current streak
+      await fetchUserStreak();
       setCurrentState('dashboard');
     } catch (error) {
       console.error('Failed to sync user with backend:', error);
@@ -96,10 +111,12 @@ function App() {
     }
   };
 
-  const handleScanComplete = (scanResult: PlantScanResult, originalFile: File) => {
+  const handleScanComplete = async (scanResult: PlantScanResult, originalFile: File) => {
     // Store the scan result and original image file
     setScanResult(scanResult);
     setOriginalImageFile(originalFile);
+    // Refresh streak after scan (as scans affect streak)
+    await fetchUserStreak();
     setCurrentState('results');
   };
 

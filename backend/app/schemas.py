@@ -193,6 +193,7 @@ class DashboardStats(BaseModel):
     current_streak: int
     total_scans: int
     achievements_earned: int
+    coins_earned: int
 
 class DashboardPlant(BaseModel):
     id: str
@@ -208,6 +209,54 @@ class DashboardResponse(BaseModel):
     stats: DashboardStats
     recent_plants: List[DashboardPlant]
     recent_achievements: List[UserAchievement]
+
+# Leaderboard schemas
+class LeaderboardEntry(BaseModel):
+    rank: int
+    user_id: str
+    name: str
+    email: str
+    score: int
+    total_plants: int
+    achievements_completed: int
+    
+    class Config:
+        from_attributes = True
+
+class LeaderboardResponse(BaseModel):
+    leaderboard: List[LeaderboardEntry]
+    current_user_rank: Optional[int] = None
+
+# Storefront schemas
+class CoinBalance(BaseModel):
+    coins_earned: int
+    coins_spent: int
+    coins_remaining: int
+
+class Coupon(BaseModel):
+    id: str
+    store_id: str
+    store_name: str
+    discount_percent: int
+    cost_coins: int
+    code: str
+    redeemed: bool
+    expires_at: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class PurchaseCouponRequest(BaseModel):
+    store_id: str
+    store_name: str
+    discount_percent: int  # 10, 20, 35
+    cost_coins: int        # 50, 100, 200
+
+class PurchaseCouponResponse(BaseModel):
+    success: bool
+    message: str
+    coupon: Optional[Coupon]
 
 # API Response schemas
 class PlantIdentificationRequest(BaseModel):

@@ -146,6 +146,9 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
     return <CheckCircle className="w-4 h-4" />;
   };
 
+  // Non-intrusive points banner: 5 per scan + 10 if healthy
+  const pointsEarnedThisScan = 5 + (result.isHealthy ? 10 : 0);
+
   return (
     <div className="space-y-6 w-full max-w-4xl mx-auto">
       {/* Main Results Card */}
@@ -185,6 +188,13 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
           )}
         </CardHeader>
         <CardContent className="p-6">
+          {/* Points earned banner (non-intrusive) */}
+          <div className="mb-4">
+            <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-1 rounded-full">
+              <span role="img" aria-label="coin">🪙</span>
+              <span className="text-sm font-semibold">+{pointsEarnedThisScan} points earned</span>
+            </div>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Species Information */}
             <div className="space-y-4">

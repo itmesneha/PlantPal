@@ -11,6 +11,7 @@ from datetime import datetime
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user_info
+from app.routers.achievements import update_achievement_progress;
 
 router = APIRouter(prefix="/api/v1/plants", tags=["plants"])
 
@@ -118,6 +119,26 @@ def add_to_garden(
         
         db.commit()
         db.refresh(db_plant)
+
+        try:
+            # Count total plants for user
+            total_plants = db.query(models.Plant).filter(
+                models.Plant.user_id == user.id
+            ).count()
+            
+            # Update plants_count achievement
+            newly_completed = update_achievement_progress(
+                user.id,
+                "plants_count",
+                total_plants,
+                db
+            )
+            
+            if newly_completed:
+                print(f"🌟 {len(newly_completed)} plant achievement(s) unlocked!")
+                
+        except Exception as e:
+            print(f"⚠️ Error updating plant achievement: {str(e)}")
         
         return schemas.AddToGardenResponse(
             success=True,

@@ -9,11 +9,13 @@ import aiohttp
 import json
 import io
 import time
+import datetime
 from typing import List, Optional
 from PIL import Image
 from app.database import get_db
 from app import models, schemas
 from app.auth import get_current_user_info
+from app.routers.achievements import update_achievement_progress, calculate_user_streak
 
 load_dotenv()
 
@@ -339,7 +341,8 @@ async def query_plantnet_api_async(image_data: bytes) -> dict:
 
 async def query_huggingface_model_async(image_data: bytes) -> dict:
     """Query the Hugging Face plant disease detection model (async)"""
-    API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    API_URL = "https://router.huggingface.co/hf-inference/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
+    # API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_1.0_224-plant-disease-identification"
     
     headers = {
         "Authorization": f"Bearer {os.getenv('HF_TOKEN')}",
@@ -628,7 +631,7 @@ async def parse_disease_predictions_async(hf_response: List[dict], image_data: b
     confidence = top_prediction.get('score', 0.0)
     
     # Determine if plant is healthy and has disease (only if confidence > 50%)
-    has_disease = 'healthy' not in prediction_label and confidence > 0.5
+    has_disease = 'healthy' not in prediction_label and confidence > 0.50
     is_healthy = not has_disease
     
     if is_healthy:
@@ -988,10 +991,7 @@ async def scan_plant(
                 db.commit()
                 db.refresh(plant_scan)
                 if existing_plant:
-                    db.refresh(existing_plant)  # Refresh the plant object too
-                
-                print(f"✅ PlantScan created and plant health updated: {plant_scan.id}")
-                
+                    db.refresh(existing_plant)  # Refresh the plant object too                
             except Exception as db_error:
                 print(f"❌ Database error: {db_error}")
                 db.rollback()
@@ -999,6 +999,70 @@ async def scan_plant(
                 print("⚠️ Continuing without database storage...")
         else:
             print("ℹ️ Species identification scan - not saving to database (will save when added to garden)")
+        
+        try:                    
+            # Update streak
+            user_id = user.id
+            
+            # Calculate current streak across all scans
+            current_streak = calculate_user_streak(user_id, db)
+
+            # Persist streak metadata on the scanned plant so dashboard/storefront stay in sync
+            if plant_id:
+                try:
+                    plant_for_update = existing_plant or db.query(models.Plant).filter(
+                        models.Plant.id == plant_id,
+                        models.Plant.user_id == user_id
+                    ).first()
+                    if plant_for_update:
+                        plant_for_update.streak_days = current_streak
+                        plant_for_update.last_check_in = datetime.datetime.utcnow()
+                        db.add(plant_for_update)
+                        db.commit()
+                        db.refresh(plant_for_update)
+                except Exception as plant_update_error:
+                    print(f"⚠️ Failed to persist streak metadata on plant {plant_id}: {plant_update_error}")
+                    db.rollback()
+
+            # Calculate and update streak achievements
+            newly_completed_streak = update_achievement_progress(
+                user_id,
+                "streak",
+                current_streak,
+                db
+            )
+                    
+            if newly_completed_streak:
+                print(f"🔥 {len(newly_completed_streak)} streak achievement(s) unlocked!")
+                    
+            # Count total scans for this user
+            total_scans = db.query(models.PlantScan).filter(
+                models.PlantScan.user_id == user_id
+            ).count()
+            if not existing_plant:
+                total_scans += 1
+                    
+            # Update scans_count achievements
+            newly_completed_scans = update_achievement_progress(
+                user_id,
+                "scans_count",
+                total_scans,
+                db
+            )
+                    
+            if newly_completed_scans:
+                print(f"📸 {len(newly_completed_scans)} scan achievement(s) unlocked!")
+                   
+            # Track all newly completed achievements
+            all_newly_completed = newly_completed_streak + newly_completed_scans
+                  
+            if all_newly_completed:
+                # You can return these in the response if needed
+                print(f"✨ Total {len(all_newly_completed)} achievement(s) unlocked this scan!")
+                        
+        except Exception as e:
+            print(f"⚠️ Error updating achievements: {str(e)}")
+            print(f"✅ PlantScan created and plant health updated: {plant_scan.id}")
         
         return scan_result
         

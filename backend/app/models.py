@@ -103,3 +103,35 @@ class UserAchievement(Base):
     user = relationship("User", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="user_achievements")
 
+class PlantSpecies(Base):
+    __tablename__ = "plant_species"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    scientific_name = Column(String, unique=True, nullable=False)
+    common_names = Column(JSON)
+    family = Column(String)
+    care_difficulty = Column(String)
+    light_requirements = Column(String)
+    water_frequency = Column(String)
+    humidity_preference = Column(String)
+    temperature_range = Column(String)
+    description = Column(Text)
+    characteristics = Column(JSON)
+    reference_images = Column(JSON)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class UserCoupon(Base):
+    __tablename__ = "user_coupons"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    store_id = Column(String, nullable=False)
+    store_name = Column(String, nullable=False)
+    discount_percent = Column(Integer, nullable=False)
+    cost_coins = Column(Integer, nullable=False)
+    code = Column(String, nullable=False, unique=True)
+    redeemed = Column(Boolean, default=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

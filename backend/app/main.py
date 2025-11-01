@@ -11,7 +11,7 @@ from app import models, schemas
 from app.auth import get_current_user_info
 
 # Import routers
-from app.routers import users, plants, scan, dashboard
+from app.routers import users, plants, scan, dashboard, achievements, storefront
 
 # Load environment variables
 load_dotenv()
@@ -49,6 +49,8 @@ app.include_router(users.router)
 app.include_router(plants.router)
 app.include_router(scan.router)
 app.include_router(dashboard.router)
+app.include_router(achievements.router)
+app.include_router(storefront.router)
 
 @app.get("/")
 def read_root():

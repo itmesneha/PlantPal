@@ -5,7 +5,7 @@ import uuid
 
 # Base schemas
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     name: str
 
 class UserCreate(UserBase):
@@ -216,7 +216,8 @@ class PlantIdentificationRequest(BaseModel):
     
     @validator('image_base64', 'image_url')
     def validate_image_input(cls, v, values):
-        if not values.get('image_base64') and not values.get('image_url'):
+        # This validator runs after image_base64, so we can check both fields
+        if not values.get('image_base64') and not v:
             raise ValueError('Either image_base64 or image_url must be provided')
         return v
 

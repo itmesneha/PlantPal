@@ -101,6 +101,26 @@ def authenticated_client(client: TestClient, db_session: Session, mock_user_info
 
 
 @pytest.fixture
+def mock_auth_dependency():
+    """Mock authentication dependency for tests."""
+    def mock_get_current_user_info():
+        return {
+            "cognito_user_id": "test-user-123",
+            "email": "test@example.com",
+            "name": "Test User",
+            "username": "testuser"
+        }
+    
+    from app.auth import get_current_user_info
+    app.dependency_overrides[get_current_user_info] = mock_get_current_user_info
+    
+    yield mock_get_current_user_info
+    
+    # Clean up
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def sample_plant_data():
     """Sample plant data for testing."""
     return {
@@ -120,6 +140,61 @@ def sample_scan_data():
         "disease_detected": None,
         "is_healthy": True
     }
+
+
+@pytest.fixture
+def test_db(db_session):
+    """Alias for db_session to match test expectations."""
+    return db_session
+
+
+@pytest.fixture
+def test_user(db_session):
+    """Create a test user for testing."""
+    user = models.User(
+        cognito_user_id="test-user-123",
+        email="test@example.com",
+        name="Test User"
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_plant(db_session, test_user):
+    """Create a test plant for testing."""
+    plant = models.Plant(
+        user_id=test_user.id,
+        name="Test Plant",
+        species="Test Species",
+        current_health_score=75.0,
+        streak_days=3
+    )
+    db_session.add(plant)
+    db_session.commit()
+    db_session.refresh(plant)
+    return plant
+
+
+@pytest.fixture
+def test_plant_scan(db_session, test_plant, test_user):
+    """Create a test plant scan for testing."""
+    from datetime import datetime
+    plant_scan = models.PlantScan(
+        plant_id=test_plant.id,
+        user_id=test_user.id,
+        health_score=85.0,
+        scan_date=datetime.utcnow(),
+        care_notes="Test care notes",
+        disease_detected=None,
+        is_healthy=True
+    )
+    db_session.add(plant_scan)
+    db_session.commit()
+    db_session.refresh(plant_scan)
+    return plant_scan
 
 
 # Cleanup after tests

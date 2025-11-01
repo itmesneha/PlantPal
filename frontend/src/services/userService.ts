@@ -33,6 +33,16 @@ export interface LeaderboardResponse {
   current_user_rank: number | null;
 }
 
+export interface UserStats {
+  current_streak: number;
+  total_plants: number;
+  healthy_plants: number;
+  plants_needing_care: number;
+  total_scans: number;
+  achievements_earned: number;
+  coins_earned: number;
+}
+
 class UserService {
   private getAuthToken = async (): Promise<string> => {
     try {
@@ -153,6 +163,31 @@ class UserService {
       return leaderboardData;
     } catch (error) {
       console.error('Failed to get leaderboard:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Get user stats including current streak
+   */
+  getUserStats = async (): Promise<UserStats> => {
+    try {
+      const response = await this.makeAuthenticatedRequest(
+        `${API_BASE_URL}/api/v1/dashboard`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to get user stats: ${response.statusText}`);
+      }
+
+      const dashboardData = await response.json();
+      console.log('✅ User stats fetched:', dashboardData.stats);
+      return dashboardData.stats;
+    } catch (error) {
+      console.error('Failed to get user stats:', error);
       throw error;
     }
   };

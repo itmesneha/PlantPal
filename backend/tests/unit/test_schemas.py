@@ -255,7 +255,8 @@ class TestDashboardSchemas:
             "plants_needing_care": 1,
             "current_streak": 7,
             "total_scans": 15,
-            "achievements_earned": 3
+            "achievements_earned": 3,
+            "coins_earned": 125
         }
         
         stats = schemas.DashboardStats(**stats_data)
@@ -266,6 +267,7 @@ class TestDashboardSchemas:
         assert stats.current_streak == 7
         assert stats.total_scans == 15
         assert stats.achievements_earned == 3
+        assert stats.coins_earned == 125
     
     def test_dashboard_plant_valid(self):
         """Test creating a valid DashboardPlant schema."""

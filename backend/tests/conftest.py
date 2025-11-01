@@ -13,8 +13,8 @@ from app.main import app
 from app.database import get_db, Base
 from app import models
 
-# Test database URL - using SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Test database URL - using SQLite for testing (in-memory for better performance)
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 # Create test engine
 engine = create_engine(

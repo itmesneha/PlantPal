@@ -25,6 +25,9 @@ import starIcon from '../assets/star.png';
 import leaderboardIcon from '../assets/leaderboard.png';
 import myPlantCollectionIcon from '../assets/plant_collection.png';
 import plant1Icon from '../assets/plant-icons/plant1.png';
+import score_icon from '../assets/score_icon.png';
+import coinIcon from '../assets/coinIcon.png';
+import shopIcon from '../assets/shopIcon.png';
 
 interface Plant {
   id: string;
@@ -93,6 +96,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [coinBalance, setCoinBalance] = useState<CoinBalance | null>(null);
+  const [userScore, setUserScore] = useState<number>(0);
 
   const refreshCoinBalance = useCallback(async () => {
     try {
@@ -192,6 +196,31 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
   useEffect(() => {
     refreshCoinBalance();
   }, [refreshCoinBalance]);
+
+  // Fetch user score on mount
+  useEffect(() => {
+    const fetchUserScore = async () => {
+      try {
+        console.log('🏆 Fetching user score...');
+        const leaderboardData = await userService.getLeaderboard(100); // Get enough to find current user
+        
+        // Find current user in leaderboard
+        const currentUserEntry = leaderboardData.leaderboard.find(
+          entry => entry.user_id === user.id
+        );
+        
+        if (currentUserEntry) {
+          setUserScore(currentUserEntry.score);
+          console.log('✅ User score fetched:', currentUserEntry.score);
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch user score:', error);
+        setUserScore(0);
+      }
+    };
+
+    fetchUserScore();
+  }, [user.id]);
 
   // Function to refresh plants (can be called after adding a new plant)
   const refreshPlants = async () => {
@@ -385,7 +414,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
         <Card className="card-hover plant-card border-green-200">
           <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -471,11 +500,40 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="order-2 sm:order-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Coins Remaining</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Coins</p>
                 <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{coinBalance?.coins_remaining ?? '—'}</p>
               </div>
               <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-lg sm:text-xl md:text-2xl">🪙</span>
+                 <img
+                  src={coinIcon}
+                  width={20}
+                  height={20}
+                  alt="icon"
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                />
+                {/* <span className="text-lg sm:text-xl md:text-2xl">🪙</span> */}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Score */}
+        <Card className="card-hover plant-card border-purple-200 col-span-2 lg:col-span-1">
+          <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="order-2 sm:order-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Your Score</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-purple-600">{userScore}</p>
+              </div>
+              <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center shadow-lg">
+                <img
+                  src={score_icon}
+                  width={20}
+                  height={20}
+                  alt="icon"
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                />
+                {/* <span className="text-lg sm:text-xl md:text-2xl">⭐</span> */}
               </div>
             </div>
           </CardContent>
@@ -484,13 +542,10 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
 
       {/* Tab Navigation */}
       <div className="relative">
-        {/* Scroll indicator - show on mobile if tabs overflow */}
-        <div className="absolute -right-1 top-0 bottom-0 w-8 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-10 rounded-r-xl sm:hidden"></div>
-        
-        <div className="flex overflow-x-auto scrollbar-hide space-x-1 sm:space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100">
+        <div className="grid grid-cols-4 gap-1 sm:gap-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100">
           <button
             onClick={() => setActiveTab('plants')}
-            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'plants'
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base ${activeTab === 'plants'
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
               }`}
@@ -506,7 +561,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           </button>
           <button
             onClick={() => setActiveTab('achievements')}
-            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'achievements'
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base ${activeTab === 'achievements'
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
               }`}
@@ -522,7 +577,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           </button>
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'leaderboard'
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base ${activeTab === 'leaderboard'
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
               }`}
@@ -538,12 +593,19 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
           </button>
           <button
             onClick={() => setActiveTab('storefront')}
-            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'storefront'
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base ${activeTab === 'storefront'
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
               : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
               }`}
           >
-            <span className="inline-block text-lg sm:text-xl md:text-2xl">🛍️</span>
+            <img
+              src={shopIcon}
+              width={20}
+              height={20}
+              alt="Leaderboard"
+              className="inline-block w-5 h-5 sm:w-6 sm:h-6"
+            />
+            {/* <span className="inline-block text-lg sm:text-xl md:text-2xl">🛍️</span> */}
             <span className="hidden sm:inline">Storefront</span>
           </button>
         </div>

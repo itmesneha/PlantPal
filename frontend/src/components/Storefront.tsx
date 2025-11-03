@@ -197,7 +197,8 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center gap-2">
+              <span className="text-xl font-medium text-gray-500">Wallet</span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -214,7 +215,6 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <span className="text-xl font-medium text-gray-500">Wallet</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">

@@ -205,24 +205,25 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
           <CardContent>
             {loading ? (
               <div>Loading...</div>
-            ) : error ? (
-              <div className="text-red-600">{error}</div>
-            ) : balance ? (
-              <div className="flex flex-wrap gap-6">
+            ) : (
+              <div className="flex flex-wrap gap-6 justify-center">
                 <div className="p-4 rounded-lg border bg-white">
                   <div className="text-sm text-gray-600">Coins Earned</div>
-                  <div className="text-2xl font-bold text-green-700">{balance.coins_earned}</div>
+                  <div className="text-2xl font-bold text-green-700">{balance?.coins_earned ?? 0}</div>
                 </div>
                 <div className="p-4 rounded-lg border bg-white">
                   <div className="text-sm text-gray-600">Coins Spent</div>
-                  <div className="text-2xl font-bold text-red-600">{balance.coins_spent}</div>
+                  <div className="text-2xl font-bold text-red-600">{balance?.coins_spent ?? 0}</div>
                 </div>
                 <div className="p-4 rounded-lg border bg-white">
                   <div className="text-sm text-gray-600">Coins Remaining</div>
-                  <div className="text-2xl font-bold text-yellow-600">{balance.coins_remaining}</div>
+                  <div className="text-2xl font-bold text-yellow-600">{balance?.coins_remaining ?? 0}</div>
                 </div>
               </div>
-            ) : null}
+            )}
+            {error && (
+              <div className="mt-4 text-sm text-amber-600">⚠️ Unable to load balance data</div>
+            )}
             {message && (
               <div className="mt-4 text-sm">{message}</div>
             )}
@@ -279,4 +280,3 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
 }
 
 export default Storefront;
-

@@ -4,7 +4,7 @@ WARNING: These endpoints should be protected and used with caution
 """
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text 
 
 from app.database import get_db
 from app import models

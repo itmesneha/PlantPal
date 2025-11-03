@@ -341,82 +341,85 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
     (plants.length > 0 ? Math.max(...plants.map(p => p.streak)) : 0);
 
   return (
-    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent flex items-center">
-            Welcome back, {user.name}!
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 md:gap-6">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent flex items-center gap-1 sm:gap-2">
+            <span>Welcome back, {user.name}!</span>
             <img
               src={plantUserIcon}
-              width={32}
+              width={20}
+              height={20}
               alt="icon"
-              className="inline-block ml-2 align-middle"
+              className="inline-block w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8"
             />
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-600">
             Track your plants, earn achievements, and grow your garden
           </p>
-          <p className="text-sm text-gray-400">
+          <p className="text-xs sm:text-sm text-gray-400">
             Member since {new Date(user.created_at).toLocaleDateString()}
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             onClick={() => onScanPlant()}
             variant="outline"
             size="lg"
-            className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300">
-            <img src={plantScanIcon} width={32} height={32} className="inline-block mr-2" alt="scan icon" /> Scan New Plant
+            className="border-green-600 text-green-600 hover:border-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-300 text-xs sm:text-sm md:text-base py-2 sm:py-2.5">
+            <img src={plantScanIcon} width={20} height={20} className="inline-block mr-1 sm:mr-2 w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" alt="scan icon" /> 
+            <span className="hidden xs:inline">Scan New Plant</span>
+            <span className="xs:hidden">Scan Plant</span>
           </Button>
           <Button
             onClick={onSignOut}
             variant="outline"
             size="lg"
-            className="border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all duration-300"
+            className="border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all duration-300 text-xs sm:text-sm md:text-base py-2 sm:py-2.5"
           >
-            <LogOut className="w-4 h-4 mr-2" />
+            <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Sign Out
           </Button>
         </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
         <Card className="card-hover plant-card border-green-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Plants</p>
-                <p className="text-3xl font-bold text-green-600">{plants.length}</p>
+          <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="order-2 sm:order-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Total Plants</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-green-600">{plants.length}</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl"><img
+              <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
+                <img
                   src={gardenIcon}
-                  width={32}
-                  height={32}
+                  width={20}
+                  height={20}
                   alt="icon"
-                  className="inline-block"
-                /></span>
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="card-hover plant-card border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg Health</p>
-                <p className="text-3xl font-bold text-blue-600">{Math.round(totalHealthScore)}%</p>
+          <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="order-2 sm:order-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Avg Health</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-600">{Math.round(totalHealthScore)}%</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
+              <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
                   src={plantHealthIcon}
-                  width={32}
-                  height={32}
+                  width={20}
+                  height={20}
                   alt="icon"
-                  className="inline-block"
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
                 />
               </div>
             </div>
@@ -424,19 +427,19 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         </Card>
 
         <Card className="card-hover plant-card border-yellow-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Achievements</p>
-                <p className="text-3xl font-bold text-yellow-600">{achievementStats?.completed ?? 0}</p>
+          <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="order-2 sm:order-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Achievements</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{achievementStats?.completed ?? 0}</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
+              <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
                   src={TrophyIcon}
-                  width={32}
-                  height={32}
+                  width={20}
+                  height={20}
                   alt="icon"
-                  className="inline-block"
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
                 />
               </div>
             </div>
@@ -444,19 +447,19 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         </Card>
 
         <Card className="card-hover plant-card border-orange-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Best Streak</p>
-                <p className="text-3xl font-bold text-orange-600">{bestStreak}</p>
+          <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="order-2 sm:order-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Best Streak</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-orange-600">{bestStreak}</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center shadow-lg">
+              <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center shadow-lg">
                 <img
                   src={fireIcon}
-                  width={32}
-                  height={32}
+                  width={20}
+                  height={20}
                   alt="icon"
-                  className="inline-block"
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8"
                 />
               </div>
             </div>
@@ -464,15 +467,15 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         </Card>
 
         {/* Coins Remaining */}
-        <Card className="card-hover plant-card border-yellow-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Coins Remaining</p>
-                <p className="text-3xl font-bold text-yellow-600">{coinBalance?.coins_remaining ?? '—'}</p>
+        <Card className="card-hover plant-card border-yellow-200 col-span-2 lg:col-span-1">
+          <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="order-2 sm:order-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Coins Remaining</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{coinBalance?.coins_remaining ?? '—'}</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-2xl">🪙</span>
+              <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-lg sm:text-xl md:text-2xl">🪙</span>
               </div>
             </div>
           </CardContent>
@@ -480,104 +483,109 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100 w-fit">
-        <button
-          onClick={() => setActiveTab('plants')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'plants'
-            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-            }`}
-        >
-          <img
-            src={myPlantsIcon}
-            width={24}
-            height={24}
-            alt="icon"
-            className="inline-block"
-          />
-          My Plants
-        </button>
-        <button
-          onClick={() => setActiveTab('achievements')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'achievements'
-            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-            }`}
-        >
-          <img
-            src={starIcon}
-            width={24}
-            height={24}
-            alt="icon"
-            className="inline-block"
-          />
-          Achievements
-        </button>
-        <button
-          onClick={() => setActiveTab('leaderboard')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'leaderboard'
-            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-            }`}
-        >
-          <img
-            src={leaderboardIcon}
-            width={24}
-            height={24}
-            alt="icon"
-            className="inline-block"
-          />
-          Leaderboard
-        </button>
-        <button
-          onClick={() => setActiveTab('storefront')}
-          className={`px-6 py-3 rounded-lg transition-all duration-300 font-medium flex items-center gap-2 ${activeTab === 'storefront'
-            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-            : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-            }`}
-        >
-          <span className="inline-block">🛍️</span>
-          Storefront
-        </button>
+      <div className="relative">
+        {/* Scroll indicator - show on mobile if tabs overflow */}
+        <div className="absolute -right-1 top-0 bottom-0 w-8 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-10 rounded-r-xl sm:hidden"></div>
+        
+        <div className="flex overflow-x-auto scrollbar-hide space-x-1 sm:space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded-xl shadow-lg border border-green-100">
+          <button
+            onClick={() => setActiveTab('plants')}
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'plants'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+              }`}
+          >
+            <img
+              src={myPlantsIcon}
+              width={20}
+              height={20}
+              alt="My Plants"
+              className="inline-block w-5 h-5 sm:w-6 sm:h-6"
+            />
+            <span className="hidden sm:inline">My Plants</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('achievements')}
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'achievements'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+              }`}
+          >
+            <img
+              src={starIcon}
+              width={20}
+              height={20}
+              alt="Achievements"
+              className="inline-block w-5 h-5 sm:w-6 sm:h-6"
+            />
+            <span className="hidden sm:inline">Achievements</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('leaderboard')}
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'leaderboard'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+              }`}
+          >
+            <img
+              src={leaderboardIcon}
+              width={20}
+              height={20}
+              alt="Leaderboard"
+              className="inline-block w-5 h-5 sm:w-6 sm:h-6"
+            />
+            <span className="hidden sm:inline">Leaderboard</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('storefront')}
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-sm md:text-base flex-shrink-0 ${activeTab === 'storefront'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+              : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+              }`}
+          >
+            <span className="inline-block text-lg sm:text-xl md:text-2xl">🛍️</span>
+            <span className="hidden sm:inline">Storefront</span>
+          </button>
+        </div>
       </div>
 
       {/* Tab Content */}
       {activeTab === 'plants' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Garden Visualization */}
           <GardenVisualization plants={plants} onScanPlant={onScanPlant} />
 
           {/* Plant Cards Grid */}
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 flex items-center gap-2">
               <img
                 src={myPlantCollectionIcon}
-                width={32}
-                height={32}
+                width={24}
+                height={24}
                 alt="icon"
-                className="inline-block"
+                className="inline-block sm:w-8 sm:h-8"
               />
               My Plant Collection
             </h3>
 
             {/* Loading State */}
             {isLoadingPlants && (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-4">
-                  <Loader2 className="w-8 h-8 animate-spin text-green-600 mx-auto" />
-                  <p className="text-gray-600">Loading your plants...</p>
+              <div className="flex items-center justify-center py-8 sm:py-12">
+                <div className="text-center space-y-3 sm:space-y-4">
+                  <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-green-600 mx-auto" />
+                  <p className="text-sm sm:text-base text-gray-600">Loading your plants...</p>
                 </div>
               </div>
             )}
 
             {/* Error State */}
             {plantsError && !isLoadingPlants && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                <p className="text-red-700 mb-4">❌ {plantsError}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6 text-center">
+                <p className="text-sm sm:text-base text-red-700 mb-3 sm:mb-4">❌ {plantsError}</p>
                 <Button
                   onClick={refreshPlants}
                   variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  className="border-red-300 text-red-600 hover:bg-red-50 text-sm sm:text-base"
                 >
                   Try Again
                 </Button>
@@ -588,11 +596,11 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             {!isLoadingPlants && !plantsError && (
               <div className="relative">
                 {/* Scroll container */}
-                <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 pt-6 snap-x snap-mandatory scroll-smooth">
+                <div className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-hide pb-3 sm:pb-4 pt-4 sm:pt-6 snap-x snap-mandatory scroll-smooth">
                   {plants.map((plant) => (
                     <Card
                       key={plant.id}
-                      className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-80 snap-start mt-2 group relative cursor-pointer"
+                      className="card-hover plant-card border-green-200 shadow-lg flex-shrink-0 w-64 sm:w-72 md:w-80 snap-start mt-2 group relative cursor-pointer"
                       onClick={() => handlePlantClick(plant)}
                     >
                       {/* Action buttons - appear on hover */}
@@ -810,21 +818,21 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
 
       {/* Plant Details Modal */}
       {showPlantDetails && selectedPlantForDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b relative">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b relative p-4 sm:p-6">
               <button
                 onClick={closePlantDetails}
-                className="absolute right-4 top-4 p-2 rounded-full hover:bg-white/50 transition-colors"
+                className="absolute right-3 top-3 sm:right-4 sm:top-4 p-2 rounded-full hover:bg-white/50 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 flex items-center justify-center bg-white rounded-full shadow-md">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white rounded-full shadow-md">
                   <img
                     src={plantIconService.getIconAsset(selectedPlantForDetails.icon || 'default')}
                     alt={selectedPlantForDetails.name}
-                    className="w-12 h-12 object-contain"
+                    className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
                   />
                 </div>
                 <div className="flex-1">
@@ -834,7 +842,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                         type="text"
                         value={editingPlantName}
                         onChange={(e) => setEditingPlantName(e.target.value)}
-                        className="text-2xl font-light bg-white border border-gray-300 rounded px-2 py-1 flex-1"
+                        className="text-lg sm:text-xl md:text-2xl font-light bg-white border border-gray-300 rounded px-2 py-1 flex-1"
                         disabled={isUpdatingPlant}
                         autoFocus
                         onKeyPress={(e) => {
@@ -848,76 +856,76 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       <button
                         onClick={handleSaveEdit}
                         disabled={isUpdatingPlant || !editingPlantName.trim()}
-                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 disabled:opacity-50"
+                        className="bg-green-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-green-600 disabled:opacity-50"
                       >
                         {isUpdatingPlant ? '...' : '✓'}
                       </button>
                       <button
                         onClick={handleCancelEdit}
                         disabled={isUpdatingPlant}
-                        className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600 disabled:opacity-50"
+                        className="bg-gray-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-gray-600 disabled:opacity-50"
                       >
                         ✗
                       </button>
                     </div>
                   ) : (
                     <div className="flex">
-                      <CardTitle className="text-2xl font-light text-gray-800">{selectedPlantForDetails.name}</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl md:text-2xl font-light text-gray-800">{selectedPlantForDetails.name}</CardTitle>
                       <Button
                         onClick={() => handleEditPlant(selectedPlantForDetails)}
                       >
-                        <Edit3 className="text-green-500" />
+                        <Edit3 className="text-green-500 w-4 h-4 sm:w-5 sm:h-5" />
                       </Button>
                     </div>
                   )}
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
+            <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
               {/* Health Score Section */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   Plant Health
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm font-medium">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between text-xs sm:text-sm font-medium">
                     <span>Health Score</span>
                     <span className={selectedPlantForDetails.healthScore >= 80 ? 'text-green-600' : selectedPlantForDetails.healthScore >= 60 ? 'text-yellow-600' : 'text-red-600'}>
                       {Math.round(selectedPlantForDetails.healthScore)}%
                     </span>
                   </div>
-                  <Progress value={selectedPlantForDetails.healthScore} className="h-3" />
-                  <div className="flex items-center gap-4">
+                  <Progress value={selectedPlantForDetails.healthScore} className="h-2 sm:h-3" />
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                     <div className="flex items-center gap-2 text-orange-600">
-                      <Flame className="w-4 h-4" />
-                      <span className="font-medium">{selectedPlantForDetails.streak} day streak</span>
+                      <Flame className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm font-medium">{selectedPlantForDetails.streak} day streak</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-500">
-                      <Calendar className="w-4 h-4" />
-                      <span>Last check: {selectedPlantForDetails.lastCheckIn}</span>
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm">Last check: {selectedPlantForDetails.lastCheckIn}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Plant Information */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
+              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                <h4 className="text-sm sm:text-base font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                   Species
                 </h4>
-                <p className="text-blue-700">{selectedPlantForDetails.species}</p>
+                <p className="text-xs sm:text-sm text-blue-700">{selectedPlantForDetails.species}</p>
               </div>
 
               {/* Disease Status */}
-              <div className={`p-4 rounded-lg ${isLoadingHealthInfo
+              <div className={`p-3 sm:p-4 rounded-lg ${isLoadingHealthInfo
                   ? 'bg-gray-50'
                   : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
                     ? 'bg-red-50 border border-red-200'
                     : 'bg-green-50 border border-green-200'
                 }`}>
-                <h4 className={`font-semibold mb-2 flex items-center gap-2 ${isLoadingHealthInfo
+                <h4 className={`text-sm sm:text-base font-semibold mb-2 flex items-center gap-2 ${isLoadingHealthInfo
                     ? 'text-gray-600'
                     : plantHealthInfo?.isHealthy === false || plantHealthInfo?.lastDisease
                       ? 'text-red-800'
@@ -933,12 +941,12 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                 </h4>
                 {isLoadingHealthInfo ? (
                   <div className="flex items-center gap-2 text-gray-500">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Loading health information...</span>
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                    <span className="text-xs sm:text-sm">Loading health information...</span>
                   </div>
                 ) : plantHealthInfo?.lastDisease ? (
                   <div className="space-y-2">
-                    <p className="text-red-700 font-medium">
+                    <p className="text-xs sm:text-sm text-red-700 font-medium">
                       Last detected: {plantHealthInfo.lastDisease}
                     </p>
                     {plantHealthInfo.lastScanDate && (
@@ -949,7 +957,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-green-700 font-medium">Plant appears healthy!</p>
+                    <p className="text-xs sm:text-sm text-green-700 font-medium">Plant appears healthy!</p>
                     {plantHealthInfo?.lastScanDate ? (
                       <p className="text-green-600 text-xs">
                         Last scan: {new Date(plantHealthInfo.lastScanDate).toLocaleDateString()}
@@ -965,10 +973,10 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               <div className="bg-purple-50 rounded-lg border border-purple-200">
                 <button
                   onClick={() => setIsCareNotesExpanded(!isCareNotesExpanded)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-purple-100 transition-colors rounded-lg"
+                  className="w-full p-3 sm:p-4 flex items-center justify-between hover:bg-purple-100 transition-colors rounded-lg"
                 >
-                  <h4 className="font-semibold text-purple-800 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
+                  <h4 className="text-sm sm:text-base font-semibold text-purple-800 flex items-center gap-2">
+                    <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                     Care Notes
                     {!isLoadingHealthInfo && plantHealthInfo?.lastCareNotes && plantHealthInfo.lastCareNotes.length > 0 && (
                       <Badge className="bg-purple-100 text-purple-700 border-purple-300 text-xs">
@@ -977,25 +985,25 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                     )}
                   </h4>
                   {isCareNotesExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-purple-600" />
+                    <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-purple-600" />
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                   )}
                 </button>
 
                 {isCareNotesExpanded && (
-                  <div className="px-4 pb-4 border-t border-purple-200/50">
+                  <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-purple-200/50">
                     {isLoadingHealthInfo ? (
                       <div className="flex items-center gap-2 text-gray-500 pt-3">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Loading care recommendations...</span>
+                        <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        <span className="text-xs sm:text-sm">Loading care recommendations...</span>
                       </div>
                     ) : plantHealthInfo?.lastCareNotes && plantHealthInfo.lastCareNotes.length > 0 ? (
-                      <div className="space-y-3 pt-3">
-                        <p className="text-purple-700 text-sm font-medium">Latest AI recommendations:</p>
+                      <div className="space-y-2 sm:space-y-3 pt-3">
+                        <p className="text-purple-700 text-xs sm:text-sm font-medium">Latest AI recommendations:</p>
                         <ul className="space-y-2">
                           {plantHealthInfo.lastCareNotes.map((note, index) => (
-                            <li key={index} className="text-purple-600 text-sm flex items-start gap-2 p-2 bg-white rounded border border-purple-100">
+                            <li key={index} className="text-purple-600 text-xs sm:text-sm flex items-start gap-2 p-2 bg-white rounded border border-purple-100">
                               <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
                               <span className="leading-relaxed">{note}</span>
                             </li>
@@ -1010,7 +1018,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
                       </div>
                     ) : (
                       <div className="pt-3">
-                        <p className="text-purple-600 text-sm italic">
+                        <p className="text-purple-600 text-xs sm:text-sm italic">
                           No care notes available. Scan your plant to get AI-powered care recommendations!
                         </p>
                       </div>
@@ -1020,20 +1028,20 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t">
                 <Button
                   onClick={() => handleScanFromDetails(selectedPlantForDetails)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base"
                 >
-                  <Camera className="w-4 h-4 mr-2" />
+                  <Camera className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Scan New Photo
                 </Button>
                 <Button
                   onClick={() => handleDeleteFromDetails(selectedPlantForDetails)}
                   variant="outline"
-                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-sm sm:text-base"
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Delete Plant
                 </Button>
               </div>
@@ -1044,54 +1052,54 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
 
       {/* Delete Confirmation Dialog */}
       {showDeleteDialog && plantToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <Card className="w-full max-w-md bg-white shadow-xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl text-red-600 flex items-center gap-2">
-                <X className="w-5 h-5" />
+            <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl text-red-600 flex items-center gap-2">
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 Delete Plant
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Are you sure you want to remove <strong>{plantToDelete.name}</strong> from your garden? This action cannot be undone.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 flex items-center justify-center">
+            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
+              <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
                   <img
                     src={plantIconService.getIconAsset(plantToDelete.icon || 'default')}
                     alt={plantToDelete.name}
-                    className="w-6 h-6 object-contain"
+                    className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
                   />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-800">{plantToDelete.name}</p>
-                  <p className="text-sm text-gray-600">{plantToDelete.species}</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-800">{plantToDelete.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">{plantToDelete.species}</p>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                 <Button
                   onClick={cancelDeletePlant}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 text-sm sm:text-base"
                   disabled={isDeletingPlant}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={confirmDeletePlant}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm sm:text-base"
                   disabled={isDeletingPlant}
                 >
                   {isDeletingPlant ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
                       Deleting...
                     </>
                   ) : (
                     <>
-                      <X className="w-4 h-4 mr-2" />
+                      <X className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                       Delete Plant
                     </>
                   )}

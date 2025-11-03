@@ -86,37 +86,37 @@ export function PlantScanner({ onScanComplete, plantId }: PlantScannerProps) {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Camera className="w-5 h-5" />
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
           {plantId ? 'Rescan Plant' : 'Plant Scanner'}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           {plantId 
             ? 'Upload a new photo to update your plant\'s health data' 
             : 'Upload a photo to identify your plant and check its health'
           }
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4">
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="text-xs sm:text-sm">{error}</AlertDescription>
           </Alert>
         )}
         
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 md:p-8 text-center">
           {selectedImage ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <img
                 src={selectedImage}
                 alt="Selected plant"
-                className="max-w-full max-h-64 mx-auto rounded-lg object-contain"
+                className="max-w-full max-h-48 sm:max-h-64 mx-auto rounded-lg object-contain"
               />
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 {selectedFile && `File: ${selectedFile.name} (${plantScanService.formatFileSize(selectedFile.size)})`}
               </div>
-              <Button onClick={handleScan} disabled={scanning || !selectedFile} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+              <Button onClick={handleScan} disabled={scanning || !selectedFile} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
                 {scanning ? (
                   <>
@@ -129,11 +129,11 @@ export function PlantScanner({ onScanComplete, plantId }: PlantScannerProps) {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <Upload className="w-12 h-12 mx-auto text-gray-400" />
+            <div className="space-y-3 sm:space-y-4">
+              <Upload className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-gray-400" />
               <div>
                 <label htmlFor="plant-image" className="cursor-pointer">
-                  <Button asChild>
+                  <Button asChild className="text-sm sm:text-base">
                     <span>
                       <Camera className="w-4 h-4 mr-2" />
                       Upload Plant Photo
@@ -148,7 +148,7 @@ export function PlantScanner({ onScanComplete, plantId }: PlantScannerProps) {
                   className="hidden"
                 />
               </div>
-              <p className="text-gray-500">
+              <p className="text-gray-500 text-xs sm:text-sm px-2">
                 Take a clear photo of your plant's leaves and stems<br />
                 <span className="text-xs">Supported formats: JPEG, PNG, GIF, WebP (Max 10MB)</span>
               </p>
@@ -164,7 +164,7 @@ export function PlantScanner({ onScanComplete, plantId }: PlantScannerProps) {
               setSelectedFile(null);
               setError(null);
             }}
-            className="w-full"
+            className="w-full text-sm sm:text-base"
           >
             Choose Different Photo
           </Button>

@@ -48,14 +48,12 @@ def clear_database():
             
             # Clear dependent tables first
             tables_to_clear = [
+                'user_coupons',
                 'user_achievements',
-                'health_reports', 
-                'plant_care_logs',
-                'scan_sessions',
+                'plant_scans',
                 'achievements',
                 'plants',
-                'users',
-                'plant_species'
+                'users'
             ]
             
             for table in tables_to_clear:

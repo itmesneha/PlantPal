@@ -150,102 +150,102 @@ export function PlantHealthReport({ result, streak, onAddToGarden, originalImage
   const pointsEarnedThisScan = 5 + (result.isHealthy ? 10 : 0);
 
   return (
-    <div className="space-y-6 w-full max-w-4xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-4xl mx-auto">
       {/* Main Results Card */}
       <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
-          <CardTitle className="flex items-center justify-between text-2xl">
-            <span className="font-light flex items-end gap-3">
+        <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b p-4 sm:p-6">
+          <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 text-xl sm:text-2xl">
+            <span className="font-light flex items-end gap-2 sm:gap-3">
               <img
                 src={analysisIcon}
-                width={32}
-                height={32}
+                width={24}
+                height={24}
                 alt="icon"
-                className="inline-block"
+                className="inline-block sm:w-8 sm:h-8"
               />
-              <h3 className="text-2xl text-gray-800">
+              <h3 className="text-lg sm:text-xl md:text-2xl text-gray-800">
                 {isRescan ? 'Health Update Results' : 'Analysis Results'}
               </h3>
             </span>
             <div className="flex items-center gap-2">
               {result.isHealthy ? (
-                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">Healthy</span>
+                <div className="flex items-center gap-1 sm:gap-2 bg-green-100 px-2 sm:px-3 py-1 rounded-full">
+                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                  <span className="text-xs sm:text-sm font-medium text-green-700">Healthy</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 bg-yellow-100 px-3 py-1 rounded-full">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-700">Needs Care</span>
+                <div className="flex items-center gap-1 sm:gap-2 bg-yellow-100 px-2 sm:px-3 py-1 rounded-full">
+                  <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600" />
+                  <span className="text-xs sm:text-sm font-medium text-yellow-700">Needs Care</span>
                 </div>
               )}
             </div>
           </CardTitle>
           {!result.isHealthy && result.confidence > 0.5 && (
-            <CardDescription className="text-base">
+            <CardDescription className="text-sm sm:text-base">
               AI Confidence: <span className="font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
             </CardDescription>
           )}
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           {/* Points earned banner (non-intrusive) */}
-          <div className="mb-4">
-            <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-1 rounded-full">
+          <div className="mb-3 sm:mb-4">
+            <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-2 sm:px-3 py-1 rounded-full">
               <span role="img" aria-label="coin">🪙</span>
-              <span className="text-sm font-semibold">+{pointsEarnedThisScan} points earned</span>
+              <span className="text-xs sm:text-sm font-semibold">+{pointsEarnedThisScan} points earned</span>
             </div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Species Information */}
-            <div className="space-y-4">
-              <div className="bg-slate-50 p-4 rounded-lg border">
-                <h3 className="text-sm font-medium text-slate-600 mb-2">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border">
+                <h3 className="text-xs sm:text-sm font-medium text-slate-600 mb-2">
                   {isRescan ? 'PLANT SPECIES' : 'IDENTIFIED SPECIES'}
                 </h3>
-                <p className="text-xl font-semibold text-slate-900">{result.species}</p>
+                <p className="text-lg sm:text-xl font-semibold text-slate-900">{result.species}</p>
                 {isRescan && (
-                  <p className="text-sm text-blue-600 mt-1">✓ Known species - focused on health analysis</p>
+                  <p className="text-xs sm:text-sm text-blue-600 mt-1">✓ Known species - focused on health analysis</p>
                 )}
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-lg border">
-                <h3 className="text-sm font-medium text-slate-600 mb-2">CARE STREAK</h3>
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border">
+                <h3 className="text-xs sm:text-sm font-medium text-slate-600 mb-2">CARE STREAK</h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-orange-600">{streak}</span>
-                  <span className="text-slate-600">consecutive days</span>
+                  <span className="text-xl sm:text-2xl font-bold text-orange-600">{streak}</span>
+                  <span className="text-sm sm:text-base text-slate-600">consecutive days</span>
                   <span className="text-orange-500">🔥</span>
                 </div>
               </div>
             </div>
 
             {/* Health Score Section */}
-            <div className="space-y-4">
-              <div className="bg-white p-6 rounded-xl border-2 border-slate-200 shadow-sm">
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Plant Health Score</h3>
-                  <div className={`inline-block rounded-full px-6 py-3 text-3xl font-bold ${getHealthScoreColor(result.healthScore)} shadow-lg`}>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="bg-white p-4 sm:p-6 rounded-xl border-2 border-slate-200 shadow-sm">
+                <div className="text-center mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-2">Plant Health Score</h3>
+                  <div className={`inline-block rounded-full px-4 sm:px-6 py-2 sm:py-3 text-2xl sm:text-3xl font-bold ${getHealthScoreColor(result.healthScore)} shadow-lg`}>
                     {Math.round(result.healthScore)}/100
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <Progress value={result.healthScore} className="h-4 bg-slate-200" />
+                <div className="mb-3 sm:mb-4">
+                  <Progress value={result.healthScore} className="h-3 sm:h-4 bg-slate-200" />
                 </div>
 
                 {/* Status Messages */}
                 <div className="text-center">
                   {result.healthScore >= 90 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="text-green-700 font-semibold flex items-center justify-center gap-2">
-                        <CheckCircle className="w-5 h-5" />
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2 sm:p-3">
+                      <div className="text-xs sm:text-sm text-green-700 font-semibold flex items-center justify-center gap-2">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                         Excellent! Your plant is thriving! 🌟
                       </div>
                     </div>
                   )}
                   {result.healthScore >= 80 && result.healthScore < 90 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="text-green-600 font-semibold flex items-center justify-center gap-2">
-                        <CheckCircle className="w-5 h-5" />
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2 sm:p-3">
+                      <div className="text-xs sm:text-sm text-green-600 font-semibold flex items-center justify-center gap-2">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                         Great job! Very healthy plant! 🌱
                       </div>
                     </div>

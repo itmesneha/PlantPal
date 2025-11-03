@@ -190,11 +190,11 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       {currentState !== 'dashboard' && (
-        <div className="p-4 bg-white/80 backdrop-blur-sm border-b border-green-100">
+        <div className="p-2 sm:p-4 bg-white/80 backdrop-blur-sm border-b border-green-100">
           <Button
             variant="ghost"
             onClick={handleBack}
-            className="mb-4 hover:bg-green-50 text-green-700"
+            className="mb-2 sm:mb-4 hover:bg-green-50 text-green-700"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -213,7 +213,7 @@ function App() {
       )}
 
       {currentState === 'scanner' && (
-        <div className="p-4 plant-grow">
+        <div className="p-2 sm:p-4 plant-grow">
           <PlantScanner 
             onScanComplete={handleScanComplete}
             plantId={rescanPlantId || undefined}
@@ -222,7 +222,7 @@ function App() {
       )}
 
       {currentState === 'results' && scanResult && (
-        <div className="p-4 plant-grow">
+        <div className="p-2 sm:p-4 plant-grow">
           <PlantHealthReport
             result={scanResult}
             streak={plantStreak}

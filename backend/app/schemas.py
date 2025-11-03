@@ -143,27 +143,27 @@ class UserAchievement(BaseModel):
         from_attributes = True
 
 # Plant Species schemas
-class PlantSpeciesBase(BaseModel):
-    scientific_name: str
-    common_names: Optional[List[str]] = []
-    family: Optional[str] = None
-    care_difficulty: Optional[str] = None
-    light_requirements: Optional[str] = None
-    water_frequency: Optional[str] = None
-    description: Optional[str] = None
+# class PlantSpeciesBase(BaseModel):
+#     scientific_name: str
+#     common_names: Optional[List[str]] = []
+#     family: Optional[str] = None
+#     care_difficulty: Optional[str] = None
+#     light_requirements: Optional[str] = None
+#     water_frequency: Optional[str] = None
+#     description: Optional[str] = None
 
-class PlantSpeciesCreate(PlantSpeciesBase):
-    pass
+# class PlantSpeciesCreate(PlantSpeciesBase):
+#     pass
 
-class PlantSpecies(PlantSpeciesBase):
-    id: str
-    characteristics: Optional[Dict[str, Any]]
-    reference_images: Optional[List[str]]
-    created_at: datetime
-    updated_at: Optional[datetime]
+# class PlantSpecies(PlantSpeciesBase):
+#     id: str
+#     characteristics: Optional[Dict[str, Any]]
+#     reference_images: Optional[List[str]]
+#     created_at: datetime
+#     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+#     class Config:
+#         from_attributes = True
 
 # Care Log schemas
 class PlantCareLogCreate(BaseModel):

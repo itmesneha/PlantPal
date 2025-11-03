@@ -109,65 +109,65 @@ def seed_achievements():
     print(f"✅ Seeded {len(default_achievements)} achievements!")
     db.close()
 
-def seed_plant_species():
-    """Seed the database with common plant species"""
-    from app.database import SessionLocal
+# def seed_plant_species():
+#     """Seed the database with common plant species"""
+#     from app.database import SessionLocal
     
-    db = SessionLocal()
+#     db = SessionLocal()
     
-    # Check if plant species already exist
-    existing_species = db.query(PlantSpecies).count()
-    if existing_species > 0:
-        print("⚠️ Plant species already exist, skipping seed...")
-        db.close()
-        return
+#     # Check if plant species already exist
+#     existing_species = db.query(PlantSpecies).count()
+#     if existing_species > 0:
+#         print("⚠️ Plant species already exist, skipping seed...")
+#         db.close()
+#         return
     
-    common_plants = [
-        {
-            "scientific_name": "Monstera deliciosa",
-            "common_names": ["Monstera", "Swiss Cheese Plant", "Split-leaf Philodendron"],
-            "family": "Araceae",
-            "care_difficulty": "Easy",
-            "description": "Popular houseplant with large, glossy leaves that develop characteristic splits and holes as they mature."
-        },
-        {
-            "scientific_name": "Sansevieria trifasciata",
-            "common_names": ["Snake Plant", "Mother-in-Law's Tongue", "Viper's Bowstring Hemp"],
-            "family": "Asparagaceae",
-            "care_difficulty": "Easy",
-            "description": "Extremely hardy plant with upright, sword-like leaves with yellow edges. Perfect for beginners."
-        },
-        {
-            "scientific_name": "Epipremnum aureum",
-            "common_names": ["Golden Pothos", "Devil's Ivy", "Money Plant"],
-            "family": "Araceae",
-            "care_difficulty": "Easy",
-            "description": "Trailing vine with heart-shaped leaves, often variegated with yellow. Very forgiving and fast-growing."
-        },
-        {
-            "scientific_name": "Ficus lyrata",
-            "common_names": ["Fiddle Leaf Fig", "Banjo Fig"],
-            "family": "Moraceae",
-            "care_difficulty": "Moderate",
-            "description": "Statement plant with large, violin-shaped leaves. Requires consistent care and stable conditions."
-        },
-        {
-            "scientific_name": "Spathiphyllum wallisii",
-            "common_names": ["Peace Lily", "Spath"],
-            "family": "Araceae",
-            "care_difficulty": "Easy",
-            "description": "Elegant plant with dark green leaves and white flower spathes. Great air purifier."
-        }
-    ]
+#     common_plants = [
+#         {
+#             "scientific_name": "Monstera deliciosa",
+#             "common_names": ["Monstera", "Swiss Cheese Plant", "Split-leaf Philodendron"],
+#             "family": "Araceae",
+#             "care_difficulty": "Easy",
+#             "description": "Popular houseplant with large, glossy leaves that develop characteristic splits and holes as they mature."
+#         },
+#         {
+#             "scientific_name": "Sansevieria trifasciata",
+#             "common_names": ["Snake Plant", "Mother-in-Law's Tongue", "Viper's Bowstring Hemp"],
+#             "family": "Asparagaceae",
+#             "care_difficulty": "Easy",
+#             "description": "Extremely hardy plant with upright, sword-like leaves with yellow edges. Perfect for beginners."
+#         },
+#         {
+#             "scientific_name": "Epipremnum aureum",
+#             "common_names": ["Golden Pothos", "Devil's Ivy", "Money Plant"],
+#             "family": "Araceae",
+#             "care_difficulty": "Easy",
+#             "description": "Trailing vine with heart-shaped leaves, often variegated with yellow. Very forgiving and fast-growing."
+#         },
+#         {
+#             "scientific_name": "Ficus lyrata",
+#             "common_names": ["Fiddle Leaf Fig", "Banjo Fig"],
+#             "family": "Moraceae",
+#             "care_difficulty": "Moderate",
+#             "description": "Statement plant with large, violin-shaped leaves. Requires consistent care and stable conditions."
+#         },
+#         {
+#             "scientific_name": "Spathiphyllum wallisii",
+#             "common_names": ["Peace Lily", "Spath"],
+#             "family": "Araceae",
+#             "care_difficulty": "Easy",
+#             "description": "Elegant plant with dark green leaves and white flower spathes. Great air purifier."
+#         }
+#     ]
     
-    print("Seeding plant species...")
-    for plant_data in common_plants:
-        plant_species = PlantSpecies(**plant_data)
-        db.add(plant_species)
+#     print("Seeding plant species...")
+#     for plant_data in common_plants:
+#         plant_species = PlantSpecies(**plant_data)
+#         db.add(plant_species)
     
-    db.commit()
-    print(f"✅ Seeded {len(common_plants)} plant species!")
-    db.close()
+#     db.commit()
+#     print(f"✅ Seeded {len(common_plants)} plant species!")
+#     db.close()
 
 if __name__ == "__main__":
     print("🌱 Initializing PlantPal Database...")

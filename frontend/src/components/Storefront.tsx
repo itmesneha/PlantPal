@@ -196,10 +196,10 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            {/* <CardTitle className="flex items-center gap-2">
               <span className="text-2xl">🪴🏪</span>
               Storefront
-            </CardTitle>
+            </CardTitle> */}
             <CardDescription>Spend your coins to get discount coupons from partner stores</CardDescription>
           </CardHeader>
           <CardContent>

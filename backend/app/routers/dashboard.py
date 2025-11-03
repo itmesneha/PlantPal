@@ -136,9 +136,16 @@ def get_leaderboard(
         # Sort by score (descending)
         leaderboard_entries.sort(key=lambda x: x.score, reverse=True)
         
-        # Assign ranks
+        # Assign ranks with ties (same score -> same rank, next rank uses competition ranking)
+        previous_score = None
+        previous_rank = 0
         for idx, entry in enumerate(leaderboard_entries):
-            entry.rank = idx + 1
+            if entry.score == previous_score:
+                entry.rank = previous_rank
+            else:
+                entry.rank = idx + 1
+                previous_score = entry.score
+                previous_rank = entry.rank
         
         # Get current user's rank
         current_user = db.query(models.User).filter(
@@ -146,14 +153,20 @@ def get_leaderboard(
         ).first()
         
         current_user_rank = None
+        current_user_entry = None
         if current_user:
             for idx, entry in enumerate(leaderboard_entries):
                 if entry.user_id == current_user.id:
                     current_user_rank = entry.rank
+                    current_user_entry = entry
                     break
         
         # Limit results
         limited_entries = leaderboard_entries[:limit]
+
+        # Ensure current user appears even if outside the top limit
+        if current_user_entry and current_user_rank and current_user_rank > limit:
+            limited_entries = limited_entries + [current_user_entry]
         
         return schemas.LeaderboardResponse(
             leaderboard=limited_entries,

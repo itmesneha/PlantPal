@@ -105,29 +105,31 @@ class TestUserEndpoints:
         response = client.post("/api/v1/users/", json=user_data)
         assert response.status_code == 422
 
-    def test_create_user_duplicate_email(self, client: TestClient, db_session: Session):
-        """Test creating user with duplicate email."""
+    def test_create_user_duplicate_cognito_id(self, client: TestClient, db_session: Session):
+        """Test creating user with duplicate cognito_user_id returns existing user."""
         import uuid
         unique_base = str(uuid.uuid4())[:8]
         
-        user_data_1 = {
-            "cognito_user_id": f"test-user-{unique_base}-1",
-            "email": f"duplicate-{unique_base}@example.com",
-            "name": "Duplicate User 1"
+        user_data = {
+            "cognito_user_id": f"test-user-{unique_base}",
+            "email": f"user-{unique_base}@example.com",
+            "name": "Test User"
         }
         
         # Create first user
-        response1 = client.post("/api/v1/users/", json=user_data_1)
+        response1 = client.post("/api/v1/users/", json=user_data)
         assert response1.status_code == 200
+        user1_data = response1.json()
         
-        # Try to create second user with same email but different cognito_user_id
-        user_data_2 = {
-            "cognito_user_id": f"test-user-{unique_base}-2",
-            "email": f"duplicate-{unique_base}@example.com",  # Same email
-            "name": "Duplicate User 2"
-        }
-        response2 = client.post("/api/v1/users/", json=user_data_2)
-        assert response2.status_code == 400
+        # Try to create user again with same cognito_user_id (should return existing user)
+        response2 = client.post("/api/v1/users/", json=user_data)
+        assert response2.status_code == 200
+        user2_data = response2.json()
+        
+        # Should return the same user (same ID)
+        assert user1_data["id"] == user2_data["id"]
+        assert user1_data["cognito_user_id"] == user2_data["cognito_user_id"]
+        assert user1_data["email"] == user2_data["email"]
 
     def test_create_test_user(self, client: TestClient, db_session: Session):
         """Test creating a test user."""

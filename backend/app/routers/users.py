@@ -50,7 +50,7 @@ def create_user(
     db: Session = Depends(get_db)
 ):
     """Create a new user (called after Cognito signup)"""
-    # Check if user already exists by cognito_user_id
+    # Check if user already exists
     existing_user = db.query(models.User).filter(
         models.User.cognito_user_id == user.cognito_user_id
     ).first()
@@ -58,17 +58,6 @@ def create_user(
     if existing_user:
         print(f"✅ User already exists in database: {existing_user.name}")
         return existing_user  # Return existing user instead of error
-    
-    # Check if email is already taken
-    existing_email = db.query(models.User).filter(
-        models.User.email == user.email
-    ).first()
-    
-    if existing_email:
-        raise HTTPException(
-            status_code=400,
-            detail="Email already registered"
-        )
     
     # Create new user
     db_user = models.User(**user.dict())

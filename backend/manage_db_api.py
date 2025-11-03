@@ -114,26 +114,95 @@ def drop_plant_species():
     except Exception as e:
         print(f"❌ Request failed: {e}")
 
+
+def seed_achievements():
+    """Seed default achievements"""
+    print("🌱 Seeding achievements...")
+    
+    try:
+        response = requests.post(
+            f"{API_URL}/api/v1/admin/seed-achievements",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✅ {data.get('message', 'Success')}")
+            if data.get('seeded'):
+                print(f"   Seeded {data.get('count', 0)} achievements")
+        else:
+            print(f"❌ Error: {response.status_code}")
+            print(response.json())
+    except Exception as e:
+        print(f"❌ Request failed: {e}")
+
+
+def initialize_user_achievements():
+    """Initialize achievements for current user"""
+    print("🎯 Initializing achievements for current user...")
+    
+    try:
+        response = requests.post(
+            f"{API_URL}/api/v1/admin/initialize-user-achievements",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✅ {data.get('message', 'Success')}")
+            if data.get('initialized'):
+                print(f"   Initialized {data.get('user_achievement_count', 0)} user achievements")
+            elif data.get('already_initialized'):
+                print(f"   User already has {data.get('user_achievement_count', 0)} achievements")
+        else:
+            print(f"❌ Error: {response.status_code}")
+            print(response.json())
+    except Exception as e:
+        print(f"❌ Request failed: {e}")
+
+
+def print_usage():
+    """Print usage information"""
+    print("""
+Usage: python manage_db_api.py <command>
+
+Commands:
+  list                List all tables and row counts
+  seed                Seed default achievements
+  init-achievements   Initialize achievements for current user
+  clear               Clear all data from database (requires confirmation)
+  drop-species        Drop the plant_species table
+
+Environment Variables:
+  PLANTPAL_AUTH_TOKEN - JWT token from authenticated session (required)
+  API_BASE_URL        - API base URL (default: http://ec2-54-186-240-208.us-west-2.compute.amazonaws.com)
+
+Example:
+  export PLANTPAL_AUTH_TOKEN='your-jwt-token'
+  python manage_db_api.py list
+    """)
+
 def main():
+    """Main function to handle command line arguments"""
     if len(sys.argv) < 2:
-        print("Usage: python manage_db_api.py <command>")
-        print("\nCommands:")
-        print("  list          - List all tables and their row counts")
-        print("  clear         - Clear all data from database (requires confirmation)")
-        print("  drop-species  - Drop the plant_species table (requires confirmation)")
+        print_usage()
         sys.exit(1)
     
     command = sys.argv[1].lower()
     
     if command == "list":
         list_tables()
+    elif command == "seed":
+        seed_achievements()
+    elif command == "init-achievements":
+        initialize_user_achievements()
     elif command == "clear":
         clear_database()
     elif command == "drop-species":
         drop_plant_species()
     else:
         print(f"❌ Unknown command: {command}")
-        print("Valid commands: list, clear, drop-species")
+        print_usage()
         sys.exit(1)
 
 if __name__ == "__main__":

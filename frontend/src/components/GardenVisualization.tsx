@@ -91,20 +91,34 @@ export function GardenVisualization({ plants, onScanPlant }: GardenVisualization
                       </div>
                     </TooltipTrigger>
                     <TooltipContent 
-                      className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-xl rounded-lg p-2 opacity-100 backdrop-blur-none"
+                      className={`border-2 shadow-xl rounded-lg p-2 opacity-100 backdrop-blur-none ${
+                        plant.healthScore >= 50 
+                          ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
+                          : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-200'
+                      }`}
                       sideOffset={8}
                       hideWhenDetached={true}
                     >
                       <div className="text-center space-y-1">
-                        <p className="font-bold text-green-800 text-sm">{plant.name}</p>
-                        <p className="text-xs text-green-600 font-medium">{plant.species}</p>
+                        <p className={`font-bold text-sm ${
+                          plant.healthScore >= 50 ? 'text-green-800' : 'text-red-800'
+                        }`}>
+                          {plant.name}
+                        </p>
+                        <p className={`text-xs font-medium ${
+                          plant.healthScore >= 50 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {plant.species}
+                        </p>
                         <div className="flex items-center justify-center gap-2 mt-1">
                           <Badge 
                             variant={plant.healthScore >= 80 ? 'default' : 'secondary'}
                             className={`px-2 py-0.5 rounded-full font-medium shadow-sm text-xs ${
                               plant.healthScore >= 80 
                                 ? 'bg-green-100 text-green-800 border-green-300' 
-                                : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                                : plant.healthScore >= 50
+                                  ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                                  : 'bg-red-100 text-red-800 border-red-300'
                             }`}
                           >
                             💚 {Math.round(plant.healthScore)}/100

@@ -496,7 +496,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         </Card>
 
         {/* Coins Remaining */}
-        <Card className="card-hover plant-card border-yellow-200 col-span-2 lg:col-span-1">
+        <Card className="card-hover plant-card border-yellow-200">
           <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="order-2 sm:order-1">
@@ -518,7 +518,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
         </Card>
 
         {/* User Score */}
-        <Card className="card-hover plant-card border-purple-200 col-span-2 lg:col-span-1">
+        <Card className="card-hover plant-card border-purple-200">
           <CardContent className="p-2.5 sm:p-3 md:p-4 lg:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="order-2 sm:order-1">

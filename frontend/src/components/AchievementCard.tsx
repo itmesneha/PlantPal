@@ -20,10 +20,10 @@ export function AchievementCard({ userAchievement }: AchievementCardProps) {
     );
 
     return (
-        <Card className={`achievement-card ${is_completed ? 'completed' : ''}`}>
+        <Card className={`achievement-card ${is_completed ? 'completed' : 'opacity-50 grayscale'}`}>
         <div className="flex items-start gap-4">
             {/* Achievement Icon */}
-            <div className={`text-3xl flex-shrink-0 ${is_completed ? 'scale-110' : ''}`}>
+            <div className={`text-3xl flex-shrink-0 ${is_completed ? 'scale-110' : 'opacity-40'}`}>
             {achievement.icon || '🏆'}
             </div>
 
@@ -31,7 +31,7 @@ export function AchievementCard({ userAchievement }: AchievementCardProps) {
             <div className="flex-1 min-w-0">
             {/* Header with Title and Badge */}
             <div className="flex items-center justify-between gap-2 mb-1">
-                <h3 className="achievement-title truncate">
+                <h3 className={`achievement-title truncate ${!is_completed ? 'text-gray-500' : ''}`}>
                 {achievement.name}
                 </h3>
                 {is_completed ? (
@@ -40,7 +40,7 @@ export function AchievementCard({ userAchievement }: AchievementCardProps) {
                     Unlocked
                 </Badge>
                 ) : (
-                <Badge variant="secondary" className="whitespace-nowrap">
+                <Badge variant="secondary" className="whitespace-nowrap opacity-60">
                     <Lock className="w-3 h-3 mr-1" />
                     Locked
                 </Badge>
@@ -48,26 +48,30 @@ export function AchievementCard({ userAchievement }: AchievementCardProps) {
             </div>
 
             {/* Description */}
-            <p className="achievement-description mb-3">
+            <p className={`achievement-description mb-3 ${!is_completed ? 'text-gray-500' : ''}`}>
                 {achievement.description}
             </p>
 
             {/* Progress Bar - Only show if NOT completed */}
             {!is_completed && (
                 <div className="space-y-1">
-                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+                <div className="flex justify-between text-xs text-gray-500">
                     <span>Progress</span>
                     <span>{current_progress} / {achievement.requirement_value}</span>
                 </div>
-                <Progress value={progressPercent} className="h-2" />
+                <Progress value={progressPercent} className="h-2 opacity-60" />
                 </div>
             )}
 
             {/* Points and Completion Date */}
             <div className="flex items-center justify-between mt-3 text-xs">
-                <span className="achievement-points flex items-center gap-2">
+                <span className={`achievement-points flex items-center gap-2 ${!is_completed ? 'text-gray-500' : ''}`}>
                 {achievement.points_awarded} pts
-                <span className="inline-flex items-center gap-1 bg-yellow-50 border border-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                    is_completed 
+                    ? 'bg-yellow-50 border border-yellow-200 text-yellow-800' 
+                    : 'bg-gray-50 border border-gray-200 text-gray-500'
+                }`}>
                     <span role="img" aria-label="coin">🪙</span>
                     +20 coins on unlock
                 </span>

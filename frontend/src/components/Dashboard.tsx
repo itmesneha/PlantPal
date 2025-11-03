@@ -501,7 +501,7 @@ export function Dashboard({ user, onScanPlant, onSignOut }: DashboardProps) {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="order-2 sm:order-1">
                 <p className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">Coins</p>
-                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{coinBalance?.coins_remaining ?? '—'}</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600">{coinBalance?.coins_remaining ?? '0'}</p>
               </div>
               <div className="order-1 sm:order-2 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-lg">
                  <img

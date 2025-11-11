@@ -13,6 +13,16 @@ from app.main import app
 from app.database import get_db, Base
 from app import models
 
+# CRITICAL: Override environment variables to ensure test isolation
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["HF_TOKEN"] = "test_token"
+os.environ["PLANTNET_API_KEY"] = "test_key"
+os.environ["OPENROUTER_API_KEY"] = "test_key"
+os.environ["AWS_ACCESS_KEY_ID"] = "test_key"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "test_secret"
+os.environ["COGNITO_USER_POOL_ID"] = "test_pool"
+os.environ["COGNITO_CLIENT_ID"] = "test_client"
+
 # Test database URL - using SQLite for testing (in-memory for better performance)
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -202,6 +212,11 @@ def test_plant_scan(db_session, test_plant, test_user):
 def cleanup_test_db():
     """Clean up test database after each test."""
     yield
-    # Remove test database file if it exists
-    if os.path.exists("./test.db"):
-        os.remove("./test.db")
+    # Remove any test database files that might have been created
+    test_db_files = ["./test.db", "./test_plantpal.db", "./plantpal_test.db"]
+    for db_file in test_db_files:
+        if os.path.exists(db_file):
+            try:
+                os.remove(db_file)
+            except OSError:
+                pass  # File might be in use, ignore

@@ -161,6 +161,38 @@ def initialize_user_achievements():
         print(f"❌ Request failed: {e}")
 
 
+def delete_test_users():
+    """Delete all users with 'User' in their name"""
+    print("\n🚨 WARNING: This will delete all users with 'User' in their name!")
+    print("This includes all their plants, scans, achievements, and coupons.\n")
+    
+    confirmation = input("Type 'YES_DELETE_TEST_USERS' to confirm: ")
+    
+    if confirmation != "YES_DELETE_TEST_USERS":
+        print("❌ Operation cancelled")
+        return
+    
+    print("\n🗑️  Deleting test users...")
+    try:
+        response = requests.post(
+            f"{API_URL}/api/v1/admin/delete-test-users",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"\n✅ {data.get('message', 'Success')}")
+            if data.get('deleted_users'):
+                print("\n📋 Deleted users:")
+                for name in data['deleted_users']:
+                    print(f"   - {name}")
+        else:
+            print(f"❌ Error: {response.status_code}")
+            print(response.json())
+    except Exception as e:
+        print(f"❌ Request failed: {e}")
+
+
 def print_usage():
     """Print usage information"""
     print("""
@@ -172,6 +204,7 @@ Commands:
   init-achievements   Initialize achievements for current user
   clear               Clear all data from database (requires confirmation)
   drop-species        Drop the plant_species table
+  delete-test-users   Delete all users with 'User' in their name (requires confirmation)
 
 Environment Variables:
   PLANTPAL_AUTH_TOKEN - JWT token from authenticated session (required)
@@ -200,6 +233,8 @@ def main():
         clear_database()
     elif command == "drop-species":
         drop_plant_species()
+    elif command == "delete-test-users":
+        delete_test_users()
     else:
         print(f"❌ Unknown command: {command}")
         print_usage()

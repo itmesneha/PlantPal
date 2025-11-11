@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { storefrontService, CoinBalance } from '../services/storefrontService';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, Info } from 'lucide-react';
 
 interface StoreProduct {
   id: string;
@@ -196,33 +197,48 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            {/* <CardTitle className="flex items-center gap-2">
-              <span className="text-2xl">🪴🏪</span>
-              Storefront
-            </CardTitle> */}
-            <CardDescription>Spend your coins to get discount coupons from partner stores</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <span className="text-xl font-medium text-gray-500">Wallet</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="w-5 h-5 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-600 transition-colors">
+                      <Info className="w-3 h-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs bg-green-50 border border-green-200 shadow-lg">
+                    <p className="text-sm text-gray-700">
+                      💰 <strong>How to use coins:</strong><br />
+                      Earn coins by completing achievements and scanning plants. 
+                      Spend them here to get discount coupons from our partner stores!
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {loading ? (
               <div>Loading...</div>
-            ) : error ? (
-              <div className="text-red-600">{error}</div>
-            ) : balance ? (
+            ) : (
               <div className="flex flex-wrap gap-6">
-                <div className="p-4 rounded-lg border bg-white">
+                <div className="p-4 rounded-lg border bg-white text-center">
                   <div className="text-sm text-gray-600">Coins Earned</div>
-                  <div className="text-2xl font-bold text-green-700">{balance.coins_earned}</div>
+                  <div className="text-2xl font-bold text-green-700">{balance?.coins_earned ?? 0}</div>
                 </div>
-                <div className="p-4 rounded-lg border bg-white">
+                <div className="p-4 rounded-lg border bg-white text-center">
                   <div className="text-sm text-gray-600">Coins Spent</div>
-                  <div className="text-2xl font-bold text-red-600">{balance.coins_spent}</div>
+                  <div className="text-2xl font-bold text-red-600">{balance?.coins_spent ?? 0}</div>
                 </div>
-                <div className="p-4 rounded-lg border bg-white">
+                <div className="p-4 rounded-lg border bg-white text-center">
                   <div className="text-sm text-gray-600">Coins Remaining</div>
-                  <div className="text-2xl font-bold text-yellow-600">{balance.coins_remaining}</div>
+                  <div className="text-2xl font-bold text-yellow-600">{balance?.coins_remaining ?? 0}</div>
                 </div>
               </div>
-            ) : null}
+            )}
+            {error && (
+              <div className="mt-4 text-sm text-amber-600">⚠️ Unable to load balance data</div>
+            )}
             {message && (
               <div className="mt-4 text-sm">{message}</div>
             )}
@@ -279,4 +295,3 @@ export function Storefront({ onBalanceChange }: StorefrontProps) {
 }
 
 export default Storefront;
-

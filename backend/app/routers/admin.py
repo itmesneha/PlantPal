@@ -4,7 +4,7 @@ WARNING: These endpoints should be protected and used with caution
 """
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text 
 
 from app.database import get_db
 from app import models
@@ -361,4 +361,74 @@ def initialize_user_achievements_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to initialize user achievements: {str(e)}"
+        )
+
+
+@router.post("/delete-test-users")
+def delete_test_users(
+    user_info: dict = Depends(get_current_user_info),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete all users that have 'User' in their name
+    Useful for cleaning up test accounts
+    """
+    try:
+        # Find users with 'User' in their name
+        users_to_delete = db.query(models.User).filter(
+            models.User.name.ilike('%User%')
+        ).all()
+        
+        if not users_to_delete:
+            return {
+                "success": True,
+                "message": "No users with 'User' in their name found",
+                "deleted_count": 0
+            }
+        
+        deleted_count = 0
+        deleted_names = []
+        
+        for user in users_to_delete:
+            deleted_names.append(user.name)
+            
+            # Delete related data first (to respect foreign key constraints)
+            # Delete user coupons
+            db.query(models.UserCoupon).filter(
+                models.UserCoupon.user_id == user.id
+            ).delete()
+            
+            # Delete user achievements
+            db.query(models.UserAchievement).filter(
+                models.UserAchievement.user_id == user.id
+            ).delete()
+            
+            # Delete plant scans
+            db.query(models.PlantScan).filter(
+                models.PlantScan.user_id == user.id
+            ).delete()
+            
+            # Delete plants
+            db.query(models.Plant).filter(
+                models.Plant.user_id == user.id
+            ).delete()
+            
+            # Finally, delete the user
+            db.delete(user)
+            deleted_count += 1
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Successfully deleted {deleted_count} test users",
+            "deleted_count": deleted_count,
+            "deleted_users": deleted_names
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete test users: {str(e)}"
         )

@@ -68,6 +68,8 @@ jobs:
              --arg DATABASE_URL "${{ secrets.DATABASE_URL }}" \
              --arg CORS_ORIGINS "http://localhost:3000,http://plantpal-frontend-bucket.s3-website-ap-southeast-1.amazonaws.com" \
              '.containerDefinitions[0].image = $IMAGE_URI |
+              .containerDefinitions[0].memory = 400 |
+              .memory = "400" |
               .containerDefinitions[0].environment = [
                 {"name": "HF_TOKEN", "value": $HF_TOKEN},
                 {"name": "PLANTNET_API_KEY", "value": $PLANTNET_API_KEY},

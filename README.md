@@ -13,23 +13,23 @@ An intelligent plant care companion that uses computer vision and AI to identify
 - 🔒 **Secure Authentication** - AWS Cognito integration for user management
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 6.42.22 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%206.42.22%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.24 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.24%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.42 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.42%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.51 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.51%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.59 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.59%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.09.16 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.09.16%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.09.47 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.09.47%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.10.24 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.10.24%20PM.png" width="600">
 
-<img src="plantpal_application_screenshots/Screenshot 2026-01-07 at 7.10.30 PM.png" width="600">
+<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.10.30%20PM.png" width="600">
 
 ## 🛠️ Tech Stack
 

@@ -13,6 +13,24 @@ An intelligent plant care companion that uses computer vision and AI to identify
 - 🔒 **Secure Authentication** - AWS Cognito integration for user management
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 6.42.22 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.24 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.42 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.51 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.08.59 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.09.16 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.09.47 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.10.24 PM.png>)
+
+![alt text](<plantpal_application_screenshots/Screenshot 2026-01-07 at 7.10.30 PM.png>)
+
 ## 🛠️ Tech Stack
 
 ### Frontend

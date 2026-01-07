@@ -13,23 +13,23 @@ An intelligent plant care companion that uses computer vision and AI to identify
 - 🔒 **Secure Authentication** - AWS Cognito integration for user management
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
-<img src="plantpal_application_screenshots/screenshot-1.png" width="300" />
+<div align="center">
+  <img src="plantpal_application_screenshots/screenshot-1.png" width="500" />
+  <img src="plantpal_application_screenshots/screenshot-2.png" width="500" />
+  <img src="plantpal_application_screenshots/screenshot-3.png" width="500" />
+</div>
 
-<img src="plantpal_application_screenshots/screenshot-2.png" width="300" />
+<div align="center">
+  <img src="plantpal_application_screenshots/screenshot-4.png" width="500" />
+  <img src="plantpal_application_screenshots/screenshot-5.png" width="500" />
+  <img src="plantpal_application_screenshots/screenshot-6.png" width="500" />
+</div>
 
-<img src="plantpal_application_screenshots/screenshot-3.png" width="300" />
-
-<img src="plantpal_application_screenshots/screenshot-4.png" width="300" />
-
-<img src="plantpal_application_screenshots/screenshot-5.png" width="300" />
-
-<img src="plantpal_application_screenshots/screenshot-6.png" width="300" />
-
-<img src="plantpal_application_screenshots/screenshot-7.png" width="300" />
-
-<img src="plantpal_application_screenshots/screenshot-8.png" width="300" />
-
-<img src="plantpal_application_screenshots/screenshot-9.png" width="300" />
+<div align="center">
+  <img src="plantpal_application_screenshots/screenshot-7.png" width="500" />
+  <img src="plantpal_application_screenshots/screenshot-8.png" width="500" />
+  <img src="plantpal_application_screenshots/screenshot-9.png" width="500" />
+</div>
 
 ## 🛠️ Tech Stack
 
@@ -129,7 +129,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/plantpal
 HF_TOKEN=your_huggingface_token
 PLANTNET_API_KEY=your_plantnet_key
 OPENROUTER_API_KEY=your_openrouter_key
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:5000
 ```
 
 #### Frontend (.env.local)

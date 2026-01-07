@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables 
 load_dotenv()
 
 # Database configuration for AWS RDS

@@ -55,7 +55,7 @@ jobs:
           echo "Image pushed: ${{ steps.ecr-reg.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest"
 
       - name: Update ECS task definition
-        id: task-def
+        id: task-def 
         run: |
           aws ecs describe-task-definition --task-definition plantpal-task \
             --query taskDefinition > task-definition.json

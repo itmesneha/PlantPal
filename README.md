@@ -13,23 +13,23 @@ An intelligent plant care companion that uses computer vision and AI to identify
 - 🔒 **Secure Authentication** - AWS Cognito integration for user management
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%206.42.22%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-1.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.24%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-2.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.42%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-3.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.51%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-4.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.08.59%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-5.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.09.16%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-6.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.09.47%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-7.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.10.24%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-8.png" width="600" />
 
-<img src="plantpal_application_screenshots/Screenshot%202026-01-07%20at%207.10.30%20PM.png" width="600">
+<img src="plantpal_application_screenshots/screenshot-9.png" width="600" />
 
 ## 🛠️ Tech Stack
 

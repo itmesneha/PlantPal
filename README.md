@@ -2,6 +2,8 @@
 
 An intelligent plant care companion that uses computer vision and AI to identify plant species, detect diseases, and provide personalized care recommendations.
 
+https://www.youtube.com/watch?v=E4Rj8j6-THI
+
 ## 🚀 Features
 
 - 📱 **Plant Disease Detection** - AI-powered analysis using computer vision models

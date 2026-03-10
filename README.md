@@ -2,7 +2,9 @@
 
 An intelligent plant care companion that uses computer vision and AI to identify plant species, detect diseases, and provide personalized care recommendations.
 
-https://www.youtube.com/watch?v=E4Rj8j6-THI
+Demo Video:
+
+[![PLANTPAL DEMO](https://img.youtube.com/vi/E4Rj8j6-THI/0.jpg)](https://www.youtube.com/watch?v=E4Rj8j6-THI)
 
 ## 🚀 Features
 
